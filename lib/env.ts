@@ -86,3 +86,39 @@ export function isProduction(): boolean {
 export function isTest(): boolean {
   return env.NODE_ENV === 'test';
 }
+
+/**
+ * Get Upstash Redis configuration
+ * @returns Redis config or null if not configured
+ */
+export function getRedisConfig(): { url: string; token: string } | null {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    return {
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    };
+  }
+  return null;
+}
+
+/**
+ * Get rate limiting configuration
+ * @returns Rate limit configuration
+ */
+export function getRateLimitConfig() {
+  return {
+    enabled: env.RATE_LIMIT_ENABLED,
+    maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
+    windowMinutes: env.RATE_LIMIT_WINDOW_MINUTES,
+    refillRate: env.RATE_LIMIT_REFILL_RATE,
+    burstCapacity: env.RATE_LIMIT_BURST_CAPACITY,
+  };
+}
+
+/**
+ * Check if rate limiting is enabled
+ * @returns True if rate limiting is enabled
+ */
+export function isRateLimitEnabled(): boolean {
+  return env.RATE_LIMIT_ENABLED && !!getRedisConfig();
+}

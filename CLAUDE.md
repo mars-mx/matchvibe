@@ -56,14 +56,20 @@ npx shadcn@latest add
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
 - **Icons**: Lucide React
 - **Fonts**: Geist Sans & Geist Mono
+- **Security**: Rate limiting (Upstash Redis), Bot protection (BotId)
+- **AI Integration**: Grok API for vibe analysis
 
 ### Project Structure
 
 - `/app` - App Router pages and layouts (no `/src` directory)
 - `/public` - Static assets
 - `/lib` - Utility functions and shadcn utils
+  - `/lib/security` - Security middleware (rate limiting, bot protection)
+  - `/lib/validations` - Zod schemas for validation
 - `/components` - React components
 - `/components/ui` - shadcn/ui components
+- `/features` - Feature-specific modules (vibe-analysis)
+- `/shared` - Shared utilities and error handling
 
 ### Key Configurations
 
@@ -144,6 +150,41 @@ const env = validateEnv(); // Fails fast with clear errors
 - **Clear errors**: Detailed validation messages for debugging
 - **External API protection**: Validate third-party responses before use
 
+### Security Infrastructure
+
+#### Rate Limiting
+
+Implemented using Upstash Redis with token bucket algorithm:
+
+- **Default Limits**: 20 requests per 10-minute window
+- **Algorithm**: Token bucket for burst tolerance
+- **Identification**: IP-based using proxy headers
+- **Local Development**: Disabled by default (no Redis needed)
+- **Production**: Auto-configured via Vercel Marketplace
+
+#### Middleware Execution Order
+
+```typescript
+// Optimal order for performance and security
+export const POST = withRateLimit(
+  // 1. Rate limit (cheap, fast)
+  withBotProtection(
+    // 2. Bot protection (expensive)
+    async (request) => {
+      // 3. Handler logic
+      // API implementation
+    }
+  )
+);
+```
+
+#### Bot Protection
+
+- Uses BotId library for detection
+- Blocks malicious automated traffic
+- Allows verified bots (Google, Bing, etc.)
+- Configurable blocking messages
+
 ### Code Quality & Pre-commit Workflow
 
 #### Pre-commit Hooks
@@ -194,18 +235,61 @@ docs: update README with setup instructions
 From README roadmap:
 
 1. ~~UI component library (Shadcn) integration~~ ✅ Complete
-2. X API integration for user fetching
-3. Vibe analysis algorithm implementation
-4. Results UI with score visualization
-5. Share functionality
-6. Error handling and edge cases
+2. ~~Rate limiting and bot protection~~ ✅ Complete
+3. X API integration for user fetching
+4. Vibe analysis algorithm implementation
+5. Results UI with score visualization
+6. Share functionality
+7. Error handling and edge cases
 
 ## Environment Variables
 
-Required for production:
+### Required
 
-- `NEXT_PUBLIC_API_KEY` - X API key for user data fetching
+- `GROK_API_KEY` - Grok API key for AI analysis (starts with `xai-`)
+
+### Optional (Local Development)
+
+- `RATE_LIMIT_ENABLED` - Enable rate limiting (default: false in dev, true in prod)
+- `RATE_LIMIT_MAX_REQUESTS` - Max requests per window (default: 20)
+- `RATE_LIMIT_WINDOW_MINUTES` - Time window in minutes (default: 10)
+- `RATE_LIMIT_REFILL_RATE` - Tokens refilled per minute (default: 2)
+- `RATE_LIMIT_BURST_CAPACITY` - Extra burst capacity (default: 5)
+
+### Required (Production)
+
+- `UPSTASH_REDIS_REST_URL` - Redis URL (auto-configured via Vercel Marketplace)
+- `UPSTASH_REDIS_REST_TOKEN` - Redis token (auto-configured via Vercel Marketplace)
 
 ## Deployment
 
 Configured for Vercel deployment with one-click deploy button in README.
+
+### Production Setup
+
+1. Deploy to Vercel
+2. Add `GROK_API_KEY` environment variable
+3. Connect Upstash Redis via Vercel Marketplace:
+   - Go to Storage tab → Connect Store → Upstash
+   - Create Redis database (free tier: 10k requests/day)
+   - Environment variables auto-configured
+
+## Testing Guidelines
+
+### Local Development
+
+- Rate limiting disabled by default
+- No Redis setup required
+- Set `RATE_LIMIT_ENABLED=true` to test rate limiting locally
+
+### Testing Rate Limiting
+
+```bash
+# Test rate limit headers
+curl -I http://localhost:3000/api/vibe/analyze
+
+# Check headers:
+# X-RateLimit-Limit: 20
+# X-RateLimit-Remaining: 19
+# X-RateLimit-Reset: 2025-01-16T10:30:00Z
+```

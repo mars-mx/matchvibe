@@ -1,100 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GrokService } from '@/features/vibe-analysis/services/grok.service';
 import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/request.schema';
-import { handleApiError, ValidationError, type ErrorResponse } from '@/shared/lib/errors';
+import { handleApiError, type ErrorResponse } from '@/shared/lib/errors';
 import { getGrokApiKey } from '@/lib/env';
+import { parseJsonSafely } from '@/lib/utils';
 import { withBotProtection } from '@/lib/security/middleware/bot-protection';
+import { withRateLimit } from '@/lib/security/middleware/rate-limit';
 import type { VibeAnalysisResponse } from '@/features/vibe-analysis/types';
 
 /**
- * Safely parse JSON from request with size limits and validation
- * @param request - The Next.js request object
- * @returns Parsed JSON object
- */
-async function parseJsonSafely(request: NextRequest): Promise<unknown> {
-  const MAX_BODY_SIZE = 1024 * 10; // 10KB limit
-
-  try {
-    // Get the raw body first to check size
-    const text = await request.text();
-
-    // Check body size
-    if (text.length > MAX_BODY_SIZE) {
-      throw new ValidationError(`Request body too large. Maximum size is ${MAX_BODY_SIZE} bytes.`, {
-        code: 'BODY_TOO_LARGE',
-        field: 'body',
-      });
-    }
-
-    // Check for empty body
-    if (!text.trim()) {
-      throw new ValidationError('Request body is empty', { code: 'EMPTY_BODY', field: 'body' });
-    }
-
-    // Parse JSON with additional safety
-    const parsed = JSON.parse(text);
-
-    // Basic type validation
-    if (typeof parsed !== 'object' || parsed === null) {
-      throw new ValidationError('Request body must be a valid JSON object', {
-        code: 'INVALID_JSON_TYPE',
-        field: 'body',
-      });
-    }
-
-    return parsed;
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      throw error;
-    }
-
-    // Handle JSON parsing errors
-    if (error instanceof SyntaxError) {
-      throw new ValidationError('Invalid JSON format in request body', {
-        code: 'INVALID_JSON_SYNTAX',
-        field: 'body',
-      });
-    }
-
-    // Re-throw other errors
-    throw error;
-  }
-}
-
-/**
- * POST handler with bot protection
+ * POST handler with rate limiting and bot protection
+ * Rate limiting runs first (cheap), then bot protection (expensive)
  * Analyzes vibe compatibility between two X users
  */
-export const POST = withBotProtection(
-  async function handler(
-    request: NextRequest
-  ): Promise<NextResponse<VibeAnalysisResponse | ErrorResponse>> {
-    try {
-      // Get validated API key from centralized env management
-      const apiKey = getGrokApiKey();
+export const POST = withRateLimit(
+  withBotProtection(
+    async function handler(
+      request: NextRequest
+    ): Promise<NextResponse<VibeAnalysisResponse | ErrorResponse>> {
+      try {
+        // Get validated API key from centralized env management
+        const apiKey = getGrokApiKey();
 
-      // Parse and validate request body with size limits
-      const body = await parseJsonSafely(request);
-      const validatedData = vibeAnalysisRequestSchema.parse(body);
+        // Parse and validate request body with size limits
+        const body = await parseJsonSafely(request);
+        const validatedData = vibeAnalysisRequestSchema.parse(body);
 
-      // Initialize service and perform analysis
-      const grokService = new GrokService(apiKey);
-      const result = await grokService.analyzeVibe({
-        userOne: validatedData.userOne,
-        userTwo: validatedData.userTwo,
-        analysisDepth: validatedData.analysisDepth || 'standard',
-      });
+        // Initialize service and perform analysis
+        const grokService = new GrokService(apiKey);
+        const result = await grokService.analyzeVibe({
+          userOne: validatedData.userOne,
+          userTwo: validatedData.userTwo,
+          analysisDepth: validatedData.analysisDepth || 'standard',
+        });
 
-      // Return successful result
-      return NextResponse.json(result, { status: 200 });
-    } catch (error) {
-      // Delegate all error handling to the centralized handler
-      return handleApiError(error);
+        // Return successful result
+        return NextResponse.json(result, { status: 200 });
+      } catch (error) {
+        // Delegate all error handling to the centralized handler
+        return handleApiError(error);
+      }
+    },
+    {
+      enableLogging: true,
+      blockMessage: 'Bot traffic detected. This endpoint is protected.',
     }
-  },
+  ),
   {
     enableLogging: true,
-    blockMessage: 'Bot traffic detected. This endpoint is protected.',
+    includeHeaders: true,
+    errorMessage: 'Too many vibe analysis requests. Please wait before analyzing more users.',
   }
 );
 
