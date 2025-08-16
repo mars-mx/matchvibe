@@ -115,7 +115,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgements
 
-- Inspired by [@marsc_hb](https://x.com/marsc_hb) and [@richkuo7](https://x.com/richkuo7/status/1956646684358029557)'s collaboration.
+- Inspired by [@marsc_hb](https://x.com/marsc_hb) and [@richkuo7](https://x.com/richkuo7)'s collaboration.
 - Built with love using Next.js, Shadcn, and the open-source community.
 
 ## Stay Connected
