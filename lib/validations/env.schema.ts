@@ -29,17 +29,17 @@ export function validateEnv(): Env {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
-    const issues = result.error.issues
-      .map((issue) => {
-        const path = issue.path.join('.');
-        return `${path}: ${issue.message}`;
-      })
-      .join(', ');
+    // Log full details securely for debugging, but don't expose in error
+    console.error('Environment validation failed - full details:', result.error.format());
 
-    throw new ConfigError(`Environment validation failed: ${issues}`, 'ENV_VALIDATION', {
-      errors: result.error.format(),
-      help: 'Ensure GROK_API_KEY is set and starts with "xai-"',
-    });
+    throw new ConfigError(
+      'Required environment variables are missing or invalid. Check server logs for details.',
+      'ENV_VALIDATION',
+      {
+        help: 'Ensure GROK_API_KEY is set and starts with "xai-"',
+        invalidFields: result.error.issues.map((issue) => issue.path.join('.')),
+      }
+    );
   }
 
   return result.data;

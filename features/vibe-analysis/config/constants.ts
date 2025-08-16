@@ -33,10 +33,11 @@ export const GROK_CONFIG = {
     maxRetries: 2,
   },
 
-  // Timeouts
+  // Timeouts - reduced for better user experience and security
   timeouts: {
-    request: 30000, // 30 seconds
-    search: 15000, // 15 seconds for search operations
+    request: 20000, // 20 seconds (reduced from 30)
+    search: 10000, // 10 seconds for search operations (reduced from 15)
+    connection: 5000, // 5 seconds for connection establishment
   },
 };
 

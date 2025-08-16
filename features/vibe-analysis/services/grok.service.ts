@@ -10,12 +10,21 @@ import {
 } from '@/shared/lib/errors';
 import { grokAPIResponseSchema, vibeAnalysisResultSchema } from '../schemas';
 import { createChildLogger } from '@/lib/logger';
+import { CircuitBreaker } from '@/lib/circuit-breaker';
 
 const logger = createChildLogger('GrokService');
 
+// Global circuit breaker instance for Grok API
+const grokCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 3,
+  resetTimeout: 30000, // 30 seconds
+  monitoringPeriod: 60000, // 1 minute
+  expectedThreshold: 0.7, // 70% success rate expected
+});
+
 /**
  * Service for analyzing vibe compatibility between X users using Grok-4 AI
- * This is a naive/MVP implementation that leverages Grok's native search capabilities
+ * Includes circuit breaker protection and enhanced error handling
  */
 export class GrokService {
   private readonly apiKey: string;
@@ -29,18 +38,29 @@ export class GrokService {
 
   /**
    * Analyzes the vibe compatibility between two X users using Grok's real-time search
+   * Includes circuit breaker protection for resilience
    * @param request - The analysis request containing both usernames
    * @returns Vibe compatibility result with score and insights
    */
   async analyzeVibe(request: VibeAnalysisRequest): Promise<VibeAnalysisResult> {
     try {
-      const systemPrompt = VIBE_COMPATIBILITY_PROMPT;
+      // Check circuit breaker state
+      if (!grokCircuitBreaker.isAvailable()) {
+        const stats = grokCircuitBreaker.getStats();
+        logger.warn(stats, 'Circuit breaker is open, rejecting request');
+        throw new ExternalAPIError(
+          'Grok',
+          'Service temporarily unavailable due to recent failures. Please try again later.'
+        );
+      }
 
-      const userPrompt = this.buildUserPrompt(request);
-
-      const grokResponse = await this.callGrokAPI(systemPrompt, userPrompt, request);
-
-      return this.parseGrokResponse(grokResponse, request);
+      // Execute with circuit breaker protection
+      return await grokCircuitBreaker.execute(async () => {
+        const systemPrompt = VIBE_COMPATIBILITY_PROMPT;
+        const userPrompt = this.buildUserPrompt(request);
+        const grokResponse = await this.callGrokAPI(systemPrompt, userPrompt, request);
+        return this.parseGrokResponse(grokResponse, request);
+      });
     } catch (error) {
       // Re-throw known errors
       if (
@@ -53,22 +73,30 @@ export class GrokService {
       }
 
       // Wrap unknown errors
-      logger.error({ error }, 'Grok service error');
+      logger.error(
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        'Grok service error'
+      );
       throw new ExternalAPIError('Grok', ERROR_MESSAGES.ANALYSIS_FAILED, error);
     }
   }
 
   /**
    * Builds the user prompt for Grok based on the analysis request
+   * Includes prompt injection protection
    */
   private buildUserPrompt(request: VibeAnalysisRequest): string {
     const { userOne, userTwo, analysisDepth = 'standard' } = request;
+
+    // Sanitize usernames to prevent prompt injection
+    const sanitizedUserOne = this.sanitizeForPrompt(userOne);
+    const sanitizedUserTwo = this.sanitizeForPrompt(userTwo);
 
     return `${ANALYSIS_INSTRUCTIONS.searchFirst}
 ${ANALYSIS_INSTRUCTIONS.analyzeQuality}
 ${ANALYSIS_INSTRUCTIONS.checkEngagement}
 
-Analyze the vibe compatibility between X users @${userOne} and @${userTwo}.
+Analyze the vibe compatibility between X users @${sanitizedUserOne} and @${sanitizedUserTwo}.
 Analysis depth: ${analysisDepth}
 
 Key Analysis Points:
@@ -81,6 +109,30 @@ Key Analysis Points:
 ${ANALYSIS_INSTRUCTIONS.matchStyles}
 
 Provide a compatibility score (0-100) heavily weighted by content style alignment and interaction compatibility.`;
+  }
+
+  /**
+   * Sanitizes input for use in prompts to prevent injection attacks
+   * @param input - The input string to sanitize
+   * @returns Sanitized string safe for prompt inclusion
+   */
+  private sanitizeForPrompt(input: string): string {
+    // Remove or escape potentially dangerous characters/patterns
+    return (
+      input
+        // Remove any control characters and non-printable chars
+        .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+        // Remove potential prompt injection patterns
+        .replace(/\n\s*System:/gi, '[SYSTEM]')
+        .replace(/\n\s*Assistant:/gi, '[ASSISTANT]')
+        .replace(/\n\s*Human:/gi, '[HUMAN]')
+        .replace(/\n\s*User:/gi, '[USER]')
+        // Remove excessive whitespace and newlines
+        .replace(/\s+/g, ' ')
+        .trim()
+        // Limit length to prevent prompt stuffing
+        .slice(0, 50)
+    );
   }
 
   /**
@@ -181,7 +233,7 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
   }
 
   /**
-   * Parses the Grok API response into a structured result
+   * Parses the Grok API response into a structured result with enhanced safety
    */
   private parseGrokResponse(
     response: GrokAPIResponse,
@@ -193,17 +245,25 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
         throw new Error('Empty response from Grok API');
       }
 
-      const parsed = JSON.parse(content);
+      // Enhanced JSON parsing with safety checks
+      const parsed = this.parseJsonSafely(content);
 
-      // Validate and normalize the score
-      const score = Math.min(100, Math.max(0, Number(parsed.score) || 50));
+      // Validate and normalize the score with additional safety
+      const rawScore = parsed.score;
+      const score = this.validateScore(rawScore);
+
+      // Sanitize text fields to prevent potential issues
+      const analysis = this.sanitizeText(parsed.analysis || 'Compatibility analysis completed');
+      const strengths = this.sanitizeArrayOfStrings(parsed.strengths || []);
+      const challenges = this.sanitizeArrayOfStrings(parsed.challenges || []);
+      const sharedInterests = this.sanitizeArrayOfStrings(parsed.sharedInterests || []);
 
       const result = {
         score,
-        analysis: parsed.analysis || 'Compatibility analysis completed',
-        strengths: parsed.strengths || [],
-        challenges: parsed.challenges || [],
-        sharedInterests: parsed.sharedInterests || [],
+        analysis,
+        strengths,
+        challenges,
+        sharedInterests,
         metadata: {
           userOne: request.userOne,
           userTwo: request.userTwo,
@@ -216,7 +276,10 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
       return vibeAnalysisResultSchema.parse(result);
     } catch (error) {
       logger.error(
-        { error, rawContent: response.choices[0]?.message?.content?.substring(0, 500) },
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          rawContentPreview: response.choices[0]?.message?.content?.substring(0, 200),
+        },
         'Failed to parse Grok response'
       );
 
@@ -227,5 +290,79 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
         error
       );
     }
+  }
+
+  /**
+   * Safely parse JSON with size and structure validation
+   */
+  private parseJsonSafely(content: string): Record<string, unknown> {
+    const MAX_CONTENT_SIZE = 50000; // 50KB limit for response content
+
+    // Check content size
+    if (content.length > MAX_CONTENT_SIZE) {
+      throw new Error(`Response content too large: ${content.length} bytes`);
+    }
+
+    // Parse JSON
+    const parsed = JSON.parse(content);
+
+    // Validate structure
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      throw new Error('Response must be a JSON object');
+    }
+
+    return parsed as Record<string, unknown>;
+  }
+
+  /**
+   * Validate and normalize score value
+   */
+  private validateScore(rawScore: unknown): number {
+    if (typeof rawScore === 'number' && !isNaN(rawScore)) {
+      return Math.min(100, Math.max(0, Math.round(rawScore)));
+    }
+
+    if (typeof rawScore === 'string') {
+      const numericScore = parseFloat(rawScore);
+      if (!isNaN(numericScore)) {
+        return Math.min(100, Math.max(0, Math.round(numericScore)));
+      }
+    }
+
+    // Default to neutral score if invalid
+    logger.warn({ rawScore }, 'Invalid score received, defaulting to 50');
+    return 50;
+  }
+
+  /**
+   * Sanitize text content to prevent issues
+   */
+  private sanitizeText(text: unknown): string {
+    if (typeof text !== 'string') {
+      return 'Analysis unavailable';
+    }
+
+    return (
+      text
+        .trim()
+        .substring(0, 1000) // Limit length
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') || // Remove control chars
+      'Analysis unavailable'
+    );
+  }
+
+  /**
+   * Sanitize array of strings with validation
+   */
+  private sanitizeArrayOfStrings(arr: unknown): string[] {
+    if (!Array.isArray(arr)) {
+      return [];
+    }
+
+    return arr
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => this.sanitizeText(item))
+      .filter((item) => item.length > 0)
+      .slice(0, 10); // Limit array size
   }
 }

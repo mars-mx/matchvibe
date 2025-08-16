@@ -21,15 +21,50 @@ const logger = pino({
   },
   redact: {
     paths: [
+      // Direct sensitive fields
       'apiKey',
       'password',
       'token',
       'secret',
+      'auth',
+      'authorization',
+      'key',
+      'credentials',
+      // Nested sensitive fields
       '*.apiKey',
       '*.password',
       '*.token',
       '*.secret',
+      '*.auth',
+      '*.authorization',
+      '*.key',
+      '*.credentials',
+      // HTTP headers
       'req.headers.authorization',
+      'req.headers.cookie',
+      'req.headers["x-api-key"]',
+      // Request/response bodies that might contain PII
+      'req.body.password',
+      'req.body.token',
+      'req.body.secret',
+      // Nested object patterns
+      '*.body.password',
+      '*.body.token',
+      '*.body.secret',
+      // Environment variables
+      'env.GROK_API_KEY',
+      'env.*.KEY',
+      'env.*.SECRET',
+      'env.*.TOKEN',
+      // User data that might be PII
+      'email',
+      'phone',
+      'ssn',
+      '*.email',
+      '*.phone',
+      '*.ssn',
+      // Error stack traces in production
+      ...(process.env.NODE_ENV === 'production' ? ['stack', '*.stack', 'error.stack'] : []),
     ],
     remove: true,
   },

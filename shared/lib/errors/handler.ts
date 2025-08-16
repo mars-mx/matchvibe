@@ -58,8 +58,11 @@ export function handleApiError(error: unknown): NextResponse<ErrorResponse> {
     }
 
     // Default to internal error for unknown errors
+    // In production, never expose the original error message
     const internalError = new InternalError(
-      process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
+      process.env.NODE_ENV === 'development'
+        ? error.message
+        : 'An internal error occurred. Please try again.',
       error
     );
 
@@ -107,31 +110,68 @@ function convertKnownError(error: Error): AppError | null {
 }
 
 /**
- * Logs errors with appropriate context
- * In production, this would send to monitoring service
+ * Logs errors with appropriate context and security filtering
+ * Ensures no sensitive information is logged in production
  */
 function logError(error: unknown): void {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   if (error instanceof AppError) {
     // Operational errors - expected failures
     if (error.isOperational) {
-      console.error(`[${error.code}] ${error.message}`, error.metadata);
+      console.error(
+        `[${error.code}] ${error.message}`,
+        isProduction ? sanitizeMetadata(error.metadata) : error.metadata
+      );
     } else {
       // Programming errors - unexpected failures
-      console.error('Unexpected error:', error);
-      console.error('Stack:', error.stack);
-      console.error('Metadata:', error.metadata);
+      console.error('Unexpected error:', error.message);
+      if (!isProduction) {
+        console.error('Stack:', error.stack);
+        console.error('Metadata:', error.metadata);
+      }
     }
   } else if (error instanceof Error) {
-    console.error('Unhandled error:', error);
-    console.error('Stack:', error.stack);
+    console.error('Unhandled error:', error.message);
+    if (!isProduction) {
+      console.error('Stack:', error.stack);
+    }
   } else {
-    console.error('Unknown error type:', error);
+    console.error('Unknown error type occurred');
+    if (!isProduction) {
+      console.error('Error details:', error);
+    }
   }
 }
 
 /**
+ * Sanitizes metadata object to remove sensitive information for production logging
+ */
+function sanitizeMetadata(metadata?: Record<string, unknown>): Record<string, unknown> {
+  if (!metadata) return {};
+
+  const sanitized: Record<string, unknown> = {};
+  const sensitiveKeys = ['apiKey', 'password', 'token', 'secret', 'authorization', 'auth'];
+
+  for (const [key, value] of Object.entries(metadata)) {
+    const keyLower = key.toLowerCase();
+
+    if (sensitiveKeys.some((sensitive) => keyLower.includes(sensitive))) {
+      sanitized[key] = '[REDACTED]';
+    } else if (typeof value === 'string' && value.length > 100) {
+      // Truncate long strings that might contain sensitive data
+      sanitized[key] = value.substring(0, 100) + '... [TRUNCATED]';
+    } else {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
+}
+
+/**
  * Determines whether to include error details in response
- * In production, this should be more restrictive
+ * Production environment removes sensitive information
  */
 function shouldIncludeDetails(): boolean {
   return process.env.NODE_ENV === 'development';
