@@ -35,6 +35,15 @@ npm run format:fix
 
 # Run TypeScript type checking
 npm run typecheck
+
+# Add shadcn/ui components
+npx shadcn@latest add [component-name]
+
+# Add multiple components
+npx shadcn@latest add button card input
+
+# Browse components interactively
+npx shadcn@latest add
 ```
 
 ## Architecture
@@ -44,14 +53,17 @@ npm run typecheck
 - **Framework**: Next.js 15.4.6 with App Router
 - **Language**: TypeScript with strict mode
 - **Styling**: Tailwind CSS v4 with PostCSS
+- **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
+- **Icons**: Lucide React
 - **Fonts**: Geist Sans & Geist Mono
 
 ### Project Structure
 
 - `/app` - App Router pages and layouts (no `/src` directory)
 - `/public` - Static assets
-- `/lib` - Utility functions (when created)
-- `/components` - React components (when created)
+- `/lib` - Utility functions and shadcn utils
+- `/components` - React components
+- `/components/ui` - shadcn/ui components
 
 ### Key Configurations
 
@@ -75,12 +87,23 @@ npm run typecheck
 
 - Tailwind CSS v4 with custom properties
 - Dark mode support via CSS variables
-- Theme colors: `--color-background`, `--color-foreground`
+- shadcn/ui theming with CSS variables
+- Theme colors: `--color-background`, `--color-foreground`, etc.
+- Component styling via `cn()` utility from `/lib/utils`
 
 ### TypeScript Requirements
 
 - Strict mode enforced - always provide proper types
 - Use path alias `@/` for imports from project root
+
+### shadcn/ui Component Usage
+
+- Components are copied into `/components/ui` directory
+- Import components using: `import { Button } from '@/components/ui/button'`
+- Components are fully customizable - modify them as needed
+- Use `cn()` utility from `/lib/utils` for conditional styling
+- Available components: Button, Input, Label, Separator, Card, Badge
+- Add new components with: `npx shadcn@latest add [component-name]`
 
 ### Code Quality & Pre-commit Workflow
 
@@ -131,7 +154,7 @@ docs: update README with setup instructions
 
 From README roadmap:
 
-1. UI component library (Shadcn) integration
+1. ~~UI component library (Shadcn) integration~~ ✅ Complete
 2. X API integration for user fetching
 3. Vibe analysis algorithm implementation
 4. Results UI with score visualization

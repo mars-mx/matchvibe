@@ -66,6 +66,15 @@ npm run format:fix
 
 # Run TypeScript type checking
 npm run typecheck
+
+# Add shadcn components
+npx shadcn@latest add [component-name]
+
+# Add multiple shadcn components
+npx shadcn@latest add button card input
+
+# Browse and select components interactively
+npx shadcn@latest add
 ```
 
 ### Environment Variables
