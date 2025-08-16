@@ -3,8 +3,8 @@
 MatchVibe is an open-source tool to analyze compatibility between X users with a vibe score (0-100) based on posting style, topics, and interactions. Built with Next.js, App Router, and Shadcn components, it’s deployed on Vercel for seamless access.
 
 - **Live Demo**: [matchvibe.app](https://matchvibe.app)
-- **Twitter**: [@marsc_hb](https://x.com/marsc_hb), [@richkuo7](https://x.com/richkuo7/status/1956646684358029557)
-- **License**: MIT (see LICENSE)
+- **X**: [@marsc_hb](https://x.com/marsc_hb), [@richkuo7](https://x.com/richkuo7)
+- **License**: MIT (see LICENSE.md)
 
 ## Features
 
@@ -111,7 +111,7 @@ This project uses automated code quality tools:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Acknowledgements
 
