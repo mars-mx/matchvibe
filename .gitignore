@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code
+CLAUDE.local.md
+.claude/config.json
+.claude/cache/
+
+# Keep team-shared commands and hooks
+!.claude/commands/
+!.claude/hooks/

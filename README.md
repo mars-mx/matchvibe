@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MatchVibe
+
+MatchVibe is an open-source tool to analyze compatibility between X users with a vibe score (0-100) based on posting style, topics, and interactions. Built with Next.js, App Router, and Shadcn components, it’s deployed on Vercel for seamless access.
+
+- **Live Demo**: [matchvibe.app](https://matchvibe.app)
+- **Twitter**: [@marsc_hb](https://x.com/marsc_hb), [@richkuo7](https://x.com/richkuo7/status/1956646684358029557)
+- **License**: MIT (see LICENSE)
+
+## Features
+- Compare X user vibes using AI-driven analysis.
+- Open-source and community-driven.
+- Responsive UI with Shadcn components.
+
+## Tech Stack
+- **Framework**: Next.js with App Router
+- **Components**: Shadcn/UI
+- **Deployment**: Vercel
+- **Language**: TypeScript
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- npm or yarn
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Installation
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/mars-mx/matchvibe
+   cd matchvibe
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run locally:
+   ```bash
+   npm run dev
+   ```
+
+### Environment Variables
+Create a `.env.local` file with:
+```
+NEXT_PUBLIC_API_KEY=your_x_api_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment
+Deploy to Vercel with one click:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%mars-mx%2Fmatchvibe)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Contributing
+We welcome contributions! Please:
+- Fork the repo and create a feature branch.
+- Submit a PR with a clear description.
+- Follow the [Contributing Guidelines](CONTRIBUTING.md).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Learn More
+## Acknowledgements
+- Inspired by [@marsc_hb](https://x.com/marsc_hb) and [@richkuo7](https://x.com/richkuo7/status/1956646684358029557)'s collaboration.
+- Built with love using Next.js, Shadcn, and the open-source community.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stay Connected
+Follow [@marsc_hb](https://x.com/marsc_hb) and [@richkuo7](https://x.com/richkuo7) for updates!
