@@ -105,6 +105,45 @@ npx shadcn@latest add
 - Available components: Button, Input, Label, Separator, Card, Badge
 - Add new components with: `npx shadcn@latest add [component-name]`
 
+### Validation Strategy
+
+MatchVibe uses Zod (v4) for comprehensive runtime validation:
+
+#### Schema Organization
+
+```
+features/vibe-analysis/schemas/
+├── request.schema.ts   # Request validation (usernames, analysis depth)
+├── response.schema.ts  # Response validation (results, errors, API responses)
+└── index.ts           # Central exports with type inference
+
+lib/validations/
+└── env.schema.ts      # Environment variable validation
+```
+
+#### Usage Examples
+
+```typescript
+// Validate API requests
+import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas';
+const validated = vibeAnalysisRequestSchema.parse(body);
+
+// Validate external API responses
+import { grokAPIResponseSchema } from '@/features/vibe-analysis/schemas';
+const data = grokAPIResponseSchema.parse(rawResponse);
+
+// Environment validation (at startup)
+import { validateEnv } from '@/lib/validations/env.schema';
+const env = validateEnv(); // Fails fast with clear errors
+```
+
+#### Benefits
+
+- **Runtime safety**: Catch malformed data before it crashes the app
+- **Type inference**: Zod schemas automatically provide TypeScript types
+- **Clear errors**: Detailed validation messages for debugging
+- **External API protection**: Validate third-party responses before use
+
 ### Code Quality & Pre-commit Workflow
 
 #### Pre-commit Hooks
