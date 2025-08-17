@@ -23,8 +23,8 @@ export function AnalysisCard({ result, className, loading = false }: AnalysisCar
   const duration = calculateAnalysisDuration(metadata.timestamp);
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
-      <CardHeader className="space-y-1">
+    <Card className={cn('liquid-glass-card overflow-hidden', className)}>
+      <CardHeader className="relative z-10 space-y-1">
         <div className="flex items-start justify-between">
           <CardTitle className="text-xl">Analysis Summary</CardTitle>
           <Badge variant="secondary" className="text-xs">
@@ -41,7 +41,7 @@ export function AnalysisCard({ result, className, loading = false }: AnalysisCar
           </span>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative z-10">
         <div className="space-y-4">
           <p className="text-muted-foreground text-sm leading-relaxed">{analysis}</p>
 

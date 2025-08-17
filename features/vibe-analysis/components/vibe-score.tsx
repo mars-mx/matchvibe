@@ -15,31 +15,48 @@ interface VibeScoreProps {
 
 export function VibeScore({ score, showAnimation = true, size = 'md', className }: VibeScoreProps) {
   const [displayScore, setDisplayScore] = useState(showAnimation ? 0 : score);
+  const [isVisible, setIsVisible] = useState(!showAnimation);
   const compatibility = getCompatibilityLevel(score);
 
   useEffect(() => {
     if (!showAnimation) {
       setDisplayScore(score);
+      setIsVisible(true);
       return;
     }
 
-    const duration = 2000;
-    const steps = 60;
-    const increment = score / steps;
-    const stepDuration = duration / steps;
-    let currentStep = 0;
+    // First fade in the component
+    const fadeInDelay = 300;
+    const fadeInTimer = setTimeout(() => {
+      setIsVisible(true);
 
-    const timer = setInterval(() => {
-      currentStep++;
-      if (currentStep >= steps) {
-        setDisplayScore(score);
-        clearInterval(timer);
-      } else {
-        setDisplayScore(Math.round(increment * currentStep));
-      }
-    }, stepDuration);
+      // Then start the score animation with constant rate
+      const animationDuration = 1500;
+      const startTime = performance.now();
 
-    return () => clearInterval(timer);
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / animationDuration, 1);
+
+        // Use easeOutQuad for smooth deceleration
+        const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+        const currentScore = Math.round(score * easeOutQuad);
+
+        setDisplayScore(currentScore);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setDisplayScore(score);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, fadeInDelay);
+
+    return () => {
+      clearTimeout(fadeInTimer);
+    };
   }, [score, showAnimation]);
 
   const getIcon = () => {
@@ -79,7 +96,14 @@ export function VibeScore({ score, showAnimation = true, size = 'md', className 
   const classes = sizeClasses[size];
 
   return (
-    <div className={cn(classes.container, className)}>
+    <div
+      className={cn(
+        classes.container,
+        className,
+        'transition-opacity duration-500',
+        isVisible ? 'opacity-100' : 'opacity-0'
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-baseline gap-2">
           <span className={cn('font-bold tabular-nums', classes.score, compatibility.color)}>
@@ -97,7 +121,7 @@ export function VibeScore({ score, showAnimation = true, size = 'md', className 
         value={displayScore}
         className={cn(classes.progress, 'transition-all duration-300')}
         indicatorClassName={cn(
-          'transition-all duration-500',
+          'transition-all duration-1000 ease-out',
           compatibility.level === 'perfect' && 'bg-green-500',
           compatibility.level === 'high' && 'bg-blue-500',
           compatibility.level === 'medium' && 'bg-yellow-500',
