@@ -3,7 +3,7 @@ import { v } from 'convex/values';
 
 export default defineSchema({
   users: defineTable({
-    twitterHandle: v.string(),
+    username: v.string(),
     displayName: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
     bio: v.optional(v.string()),
@@ -12,8 +12,9 @@ export default defineSchema({
     tweetCount: v.optional(v.number()),
     verified: v.optional(v.boolean()),
     createdAt: v.string(),
+    created_at: v.string(),
     lastUpdated: v.string(),
-  }).index('by_twitter_handle', ['twitterHandle']),
+  }).index('by_username', ['username']),
 
   results: defineTable({
     user1Id: v.id('users'),
@@ -31,8 +32,8 @@ export default defineSchema({
 
   matchups: defineTable({
     sessionId: v.string(),
-    user1Handle: v.string(),
-    user2Handle: v.optional(v.string()),
+    user_one_username: v.string(),
+    user_two_username: v.optional(v.string()),
     status: v.union(v.literal('analyzing'), v.literal('completed'), v.literal('error')),
     resultId: v.optional(v.id('results')),
     errorMessage: v.optional(v.string()),

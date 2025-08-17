@@ -12,8 +12,8 @@ export function useUpdateUser() {
   return useMutation(api.users.updateUser);
 }
 
-export function useGetUserByHandle(twitterHandle: string) {
-  return useQuery(api.users.getUserByHandle, { twitterHandle });
+export function useGetUserByUsername(username: string) {
+  return useQuery(api.users.getUserByUsername, { username });
 }
 
 export function useGetUser(userId: Id<'users'> | undefined) {

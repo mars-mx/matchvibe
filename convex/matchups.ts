@@ -5,8 +5,8 @@ import type { Id } from './_generated/dataModel';
 export const createMatchup = mutation({
   args: {
     sessionId: v.string(),
-    user1Handle: v.string(),
-    user2Handle: v.optional(v.string()),
+    user_one_username: v.string(),
+    user_two_username: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();

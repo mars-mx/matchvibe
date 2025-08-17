@@ -3,7 +3,7 @@ import { mutation, query } from './_generated/server';
 
 export const createUser = mutation({
   args: {
-    twitterHandle: v.string(),
+    username: v.string(),
     displayName: v.optional(v.string()),
     profileImageUrl: v.optional(v.string()),
     bio: v.optional(v.string()),
@@ -17,7 +17,7 @@ export const createUser = mutation({
 
     const existingUser = await ctx.db
       .query('users')
-      .withIndex('by_twitter_handle', (q) => q.eq('twitterHandle', args.twitterHandle))
+      .withIndex('by_username', (q) => q.eq('username', args.username))
       .first();
 
     if (existingUser) {
@@ -27,6 +27,7 @@ export const createUser = mutation({
     return await ctx.db.insert('users', {
       ...args,
       createdAt: now,
+      created_at: now,
       lastUpdated: now,
     });
   },
@@ -56,12 +57,12 @@ export const updateUser = mutation({
   },
 });
 
-export const getUserByHandle = query({
-  args: { twitterHandle: v.string() },
+export const getUserByUsername = query({
+  args: { username: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query('users')
-      .withIndex('by_twitter_handle', (q) => q.eq('twitterHandle', args.twitterHandle))
+      .withIndex('by_username', (q) => q.eq('username', args.username))
       .first();
   },
 });

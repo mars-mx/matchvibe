@@ -10,7 +10,7 @@ import {
 import type { Id } from '@/convex/_generated/dataModel';
 
 export interface UserData {
-  twitterHandle: string;
+  username: string;
   displayName?: string;
   profileImageUrl?: string;
   bio?: string;
@@ -70,15 +70,15 @@ export function useVibeAnalysis() {
   );
 
   const startAnalysisMatchup = useCallback(
-    async (user1Handle: string, user2Handle?: string) => {
+    async (user_one_username: string, user_two_username?: string) => {
       try {
         setIsAnalyzing(true);
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
         await createMatchup({
           sessionId,
-          user1Handle,
-          user2Handle,
+          user_one_username,
+          user_two_username,
         });
 
         setCurrentMatchup(sessionId);
