@@ -1,12 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import {
-  useCreateUser,
-  useCreateResult,
-  useCreateMatchup,
-  useUpdateMatchupStatus,
-} from './useConvex';
+import { useCreateResult, useCreateMatchup, useUpdateMatchupStatus } from './useConvex';
 import type { Id } from '@/convex/_generated/dataModel';
 
 export interface UserData {
@@ -24,23 +19,9 @@ export function useVibeAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentMatchup, setCurrentMatchup] = useState<string | null>(null);
 
-  const createUser = useCreateUser();
   const createResult = useCreateResult();
   const createMatchup = useCreateMatchup();
   const updateMatchupStatus = useUpdateMatchupStatus();
-
-  const analyzeUser = useCallback(
-    async (userData: UserData): Promise<Id<'users'>> => {
-      try {
-        const userId = await createUser(userData);
-        return userId;
-      } catch (error) {
-        console.error('Error creating user:', error);
-        throw error;
-      }
-    },
-    [createUser]
-  );
 
   const analyzeCompatibility = useCallback(
     async (
@@ -115,7 +96,6 @@ export function useVibeAnalysis() {
   return {
     isAnalyzing,
     currentMatchup,
-    analyzeUser,
     analyzeCompatibility,
     startAnalysisMatchup,
     completeAnalysisMatchup,

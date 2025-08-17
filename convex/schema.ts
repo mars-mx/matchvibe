@@ -2,20 +2,6 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 export default defineSchema({
-  users: defineTable({
-    username: v.string(),
-    displayName: v.optional(v.string()),
-    profileImageUrl: v.optional(v.string()),
-    bio: v.optional(v.string()),
-    followerCount: v.optional(v.number()),
-    followingCount: v.optional(v.number()),
-    tweetCount: v.optional(v.number()),
-    verified: v.optional(v.boolean()),
-    createdAt: v.string(),
-    created_at: v.string(),
-    lastUpdated: v.string(),
-  }).index('by_username', ['username']),
-
   results: defineTable({
     user_one_username: v.string(),
     user_two_username: v.string(),

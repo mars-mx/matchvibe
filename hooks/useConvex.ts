@@ -4,22 +4,6 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
 import type { Id } from '@/convex/_generated/dataModel';
 
-export function useCreateUser() {
-  return useMutation(api.users.createUser);
-}
-
-export function useUpdateUser() {
-  return useMutation(api.users.updateUser);
-}
-
-export function useGetUserByUsername(username: string) {
-  return useQuery(api.users.getUserByUsername, { username });
-}
-
-export function useGetUser(userId: Id<'users'> | undefined) {
-  return useQuery(api.users.getUser, userId ? { userId } : 'skip');
-}
-
 export function useCreateResult() {
   return useMutation(api.results.createResult);
 }
