@@ -42,7 +42,7 @@ interface RateLimitMiddlewareOptions {
  */
 const DEFAULT_OPTIONS: Required<Omit<RateLimitMiddlewareOptions, 'identifier' | 'skip'>> = {
   enableLogging: true,
-  errorMessage: undefined as any, // Will use default from createRateLimitError
+  errorMessage: undefined as unknown as string, // Will use default from createRateLimitError
   includeHeaders: true,
 };
 

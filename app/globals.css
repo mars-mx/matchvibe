@@ -121,6 +121,38 @@
   }
 }
 
+/* Hero component theme overrides */
+.vibe-score-hero {
+  --color-text: white;
+  --color-success: rgb(74 222 128);
+  --color-info: rgb(96 165 250);
+  --color-warning: rgb(250 204 21);
+  --color-danger: rgb(248 113 113);
+}
+
+.vibe-score-hero .text-green-500 {
+  color: var(--color-success);
+}
+.vibe-score-hero .text-blue-500 {
+  color: var(--color-info);
+}
+.vibe-score-hero .text-yellow-500 {
+  color: var(--color-warning);
+}
+.vibe-score-hero .text-red-500 {
+  color: var(--color-danger);
+}
+
+.share-results-hero button {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.share-results-hero button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 @layer utilities {
   @keyframes gradient-shift {
     0%,

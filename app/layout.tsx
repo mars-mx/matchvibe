@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { BotIdProvider } from '@/components/providers/BotIdProvider';
 import { SpeedInsightsProvider } from '@/components/providers/SpeedInsightsProvider';
+import { Analytics } from '@vercel/analytics/next';
+import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
 const geistSans = Geist({
@@ -28,7 +30,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SpeedInsightsProvider>
-          <BotIdProvider>{children}</BotIdProvider>
+          <BotIdProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+          </BotIdProvider>
         </SpeedInsightsProvider>
       </body>
     </html>
