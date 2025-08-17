@@ -3,10 +3,9 @@
 import { useState, useCallback } from 'react';
 import {
   useCreateUser,
-  useCreateVibeAnalysis,
-  useCreateCompatibilityResult,
-  useCreateSession,
-  useUpdateSessionStatus,
+  useCreateResult,
+  useCreateMatchup,
+  useUpdateMatchupStatus,
 } from './useConvex';
 import type { Id } from '@/convex/_generated/dataModel';
 
@@ -21,28 +20,14 @@ export interface UserData {
   verified?: boolean;
 }
 
-export interface VibeAnalysisData {
-  vibeScore: number;
-  personalityTraits: string[];
-  interests: string[];
-  communicationStyle: string;
-  sentiment: string;
-  analysisData?: {
-    tweetSample: string[];
-    confidenceScore: number;
-    lastAnalyzed: string;
-  };
-}
-
 export function useVibeAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [currentMatchup, setCurrentMatchup] = useState<string | null>(null);
 
   const createUser = useCreateUser();
-  const createVibeAnalysis = useCreateVibeAnalysis();
-  const createCompatibilityResult = useCreateCompatibilityResult();
-  const createSession = useCreateSession();
-  const updateSessionStatus = useUpdateSessionStatus();
+  const createResult = useCreateResult();
+  const createMatchup = useCreateMatchup();
+  const updateMatchupStatus = useUpdateMatchupStatus();
 
   const analyzeUser = useCallback(
     async (userData: UserData): Promise<Id<'users'>> => {
@@ -57,28 +42,10 @@ export function useVibeAnalysis() {
     [createUser]
   );
 
-  const createVibeScore = useCallback(
-    async (userId: Id<'users'>, analysisData: VibeAnalysisData) => {
-      try {
-        const analysisId = await createVibeAnalysis({
-          userId,
-          ...analysisData,
-        });
-        return analysisId;
-      } catch (error) {
-        console.error('Error creating vibe analysis:', error);
-        throw error;
-      }
-    },
-    [createVibeAnalysis]
-  );
-
   const analyzeCompatibility = useCallback(
     async (
       user1Id: Id<'users'>,
       user2Id: Id<'users'>,
-      analysis1Id: Id<'vibeAnalyses'>,
-      analysis2Id: Id<'vibeAnalyses'>,
       compatibilityData: {
         compatibilityScore: number;
         sharedInterests: string[];
@@ -88,35 +55,33 @@ export function useVibeAnalysis() {
       }
     ) => {
       try {
-        const resultId = await createCompatibilityResult({
+        const resultId = await createResult({
           user1Id,
           user2Id,
-          analysis1Id,
-          analysis2Id,
           ...compatibilityData,
         });
         return resultId;
       } catch (error) {
-        console.error('Error creating compatibility result:', error);
+        console.error('Error creating result:', error);
         throw error;
       }
     },
-    [createCompatibilityResult]
+    [createResult]
   );
 
-  const startAnalysisSession = useCallback(
+  const startAnalysisMatchup = useCallback(
     async (user1Handle: string, user2Handle?: string) => {
       try {
         setIsAnalyzing(true);
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-        await createSession({
+        await createMatchup({
           sessionId,
           user1Handle,
           user2Handle,
         });
 
-        setCurrentSession(sessionId);
+        setCurrentMatchup(sessionId);
         return sessionId;
       } catch (error) {
         console.error('Error starting analysis session:', error);
@@ -124,40 +89,35 @@ export function useVibeAnalysis() {
         throw error;
       }
     },
-    [createSession]
+    [createMatchup]
   );
 
-  const completeAnalysisSession = useCallback(
-    async (
-      sessionId: string,
-      compatibilityResultId?: Id<'compatibilityResults'>,
-      errorMessage?: string
-    ) => {
+  const completeAnalysisMatchup = useCallback(
+    async (sessionId: string, resultId?: Id<'results'>, errorMessage?: string) => {
       try {
-        await updateSessionStatus({
+        await updateMatchupStatus({
           sessionId,
           status: errorMessage ? 'error' : 'completed',
-          compatibilityResultId,
+          resultId,
           errorMessage,
         });
 
         setIsAnalyzing(false);
-        setCurrentSession(null);
+        setCurrentMatchup(null);
       } catch (error) {
         console.error('Error completing analysis session:', error);
         throw error;
       }
     },
-    [updateSessionStatus]
+    [updateMatchupStatus]
   );
 
   return {
     isAnalyzing,
-    currentSession,
+    currentMatchup,
     analyzeUser,
-    createVibeScore,
     analyzeCompatibility,
-    startAnalysisSession,
-    completeAnalysisSession,
+    startAnalysisMatchup,
+    completeAnalysisMatchup,
   };
 }

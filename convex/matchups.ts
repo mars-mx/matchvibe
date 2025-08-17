@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import type { Id } from './_generated/dataModel';
 
-export const createSession = mutation({
+export const createMatchup = mutation({
   args: {
     sessionId: v.string(),
     user1Handle: v.string(),
@@ -11,7 +11,7 @@ export const createSession = mutation({
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
 
-    return await ctx.db.insert('sessions', {
+    return await ctx.db.insert('matchups', {
       ...args,
       status: 'analyzing',
       createdAt: now,
@@ -19,34 +19,34 @@ export const createSession = mutation({
   },
 });
 
-export const updateSessionStatus = mutation({
+export const updateMatchupStatus = mutation({
   args: {
     sessionId: v.string(),
     status: v.union(v.literal('analyzing'), v.literal('completed'), v.literal('error')),
-    compatibilityResultId: v.optional(v.id('compatibilityResults')),
+    resultId: v.optional(v.id('results')),
     errorMessage: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const session = await ctx.db
-      .query('sessions')
-      .withIndex('by_session_id', (q) => q.eq('sessionId', args.sessionId))
+    const matchup = await ctx.db
+      .query('matchups')
+      .withIndex('by_matchup_id', (q) => q.eq('sessionId', args.sessionId))
       .first();
 
-    if (!session) {
-      throw new Error('Session not found');
+    if (!matchup) {
+      throw new Error('Matchup not found');
     }
 
     const updateData: {
       status: 'analyzing' | 'completed' | 'error';
-      compatibilityResultId?: Id<'compatibilityResults'>;
+      resultId?: Id<'results'>;
       errorMessage?: string;
       completedAt?: string;
     } = {
       status: args.status,
     };
 
-    if (args.compatibilityResultId) {
-      updateData.compatibilityResultId = args.compatibilityResultId;
+    if (args.resultId) {
+      updateData.resultId = args.resultId;
     }
 
     if (args.errorMessage) {
@@ -57,25 +57,25 @@ export const updateSessionStatus = mutation({
       updateData.completedAt = new Date().toISOString();
     }
 
-    await ctx.db.patch(session._id, updateData);
-    return session._id;
+    await ctx.db.patch(matchup._id, updateData);
+    return matchup._id;
   },
 });
 
-export const getSession = query({
+export const getMatchup = query({
   args: { sessionId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query('sessions')
-      .withIndex('by_session_id', (q) => q.eq('sessionId', args.sessionId))
+      .query('matchups')
+      .withIndex('by_matchup_id', (q) => q.eq('sessionId', args.sessionId))
       .first();
   },
 });
 
-export const getRecentSessions = query({
+export const getRecentMatchups = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const limit = args.limit ?? 10;
-    return await ctx.db.query('sessions').order('desc').take(limit);
+    return await ctx.db.query('matchups').order('desc').take(limit);
   },
 });

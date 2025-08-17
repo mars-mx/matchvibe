@@ -20,52 +20,34 @@ export function useGetUser(userId: Id<'users'> | undefined) {
   return useQuery(api.users.getUser, userId ? { userId } : 'skip');
 }
 
-export function useCreateVibeAnalysis() {
-  return useMutation(api.vibeAnalysis.createVibeAnalysis);
+export function useCreateResult() {
+  return useMutation(api.results.createResult);
 }
 
-export function useGetVibeAnalysisByUser(userId: Id<'users'> | undefined) {
-  return useQuery(api.vibeAnalysis.getVibeAnalysisByUser, userId ? { userId } : 'skip');
+export function useGetResult(user1Id: Id<'users'> | undefined, user2Id: Id<'users'> | undefined) {
+  return useQuery(api.results.getResult, user1Id && user2Id ? { user1Id, user2Id } : 'skip');
 }
 
-export function useGetAllVibeAnalysesByUser(userId: Id<'users'> | undefined) {
-  return useQuery(api.vibeAnalysis.getAllVibeAnalysesByUser, userId ? { userId } : 'skip');
+export function useGetResultById(resultId: Id<'results'> | undefined) {
+  return useQuery(api.results.getResultById, resultId ? { resultId } : 'skip');
 }
 
-export function useCreateCompatibilityResult() {
-  return useMutation(api.compatibility.createCompatibilityResult);
+export function useGetUserResultHistory(userId: Id<'users'> | undefined) {
+  return useQuery(api.results.getUserResultHistory, userId ? { userId } : 'skip');
 }
 
-export function useGetCompatibilityResult(
-  user1Id: Id<'users'> | undefined,
-  user2Id: Id<'users'> | undefined
-) {
-  return useQuery(
-    api.compatibility.getCompatibilityResult,
-    user1Id && user2Id ? { user1Id, user2Id } : 'skip'
-  );
+export function useCreateMatchup() {
+  return useMutation(api.matchups.createMatchup);
 }
 
-export function useGetCompatibilityResultById(resultId: Id<'compatibilityResults'> | undefined) {
-  return useQuery(api.compatibility.getCompatibilityResultById, resultId ? { resultId } : 'skip');
+export function useUpdateMatchupStatus() {
+  return useMutation(api.matchups.updateMatchupStatus);
 }
 
-export function useGetUserCompatibilityHistory(userId: Id<'users'> | undefined) {
-  return useQuery(api.compatibility.getUserCompatibilityHistory, userId ? { userId } : 'skip');
+export function useGetMatchup(sessionId: string | undefined) {
+  return useQuery(api.matchups.getMatchup, sessionId ? { sessionId } : 'skip');
 }
 
-export function useCreateSession() {
-  return useMutation(api.sessions.createSession);
-}
-
-export function useUpdateSessionStatus() {
-  return useMutation(api.sessions.updateSessionStatus);
-}
-
-export function useGetSession(sessionId: string | undefined) {
-  return useQuery(api.sessions.getSession, sessionId ? { sessionId } : 'skip');
-}
-
-export function useGetRecentSessions(limit?: number) {
-  return useQuery(api.sessions.getRecentSessions, { limit });
+export function useGetRecentMatchups(limit?: number) {
+  return useQuery(api.matchups.getRecentMatchups, { limit });
 }

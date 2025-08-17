@@ -15,29 +15,10 @@ export default defineSchema({
     lastUpdated: v.string(),
   }).index('by_twitter_handle', ['twitterHandle']),
 
-  vibeAnalyses: defineTable({
-    userId: v.id('users'),
-    vibeScore: v.number(),
-    personalityTraits: v.array(v.string()),
-    interests: v.array(v.string()),
-    communicationStyle: v.string(),
-    sentiment: v.string(),
-    analysisData: v.optional(
-      v.object({
-        tweetSample: v.array(v.string()),
-        confidenceScore: v.number(),
-        lastAnalyzed: v.string(),
-      })
-    ),
-    createdAt: v.string(),
-  }).index('by_user', ['userId']),
-
-  compatibilityResults: defineTable({
+  results: defineTable({
     user1Id: v.id('users'),
     user2Id: v.id('users'),
     compatibilityScore: v.number(),
-    analysis1Id: v.id('vibeAnalyses'),
-    analysis2Id: v.id('vibeAnalyses'),
     sharedInterests: v.array(v.string()),
     complementaryTraits: v.array(v.string()),
     potentialConflicts: v.array(v.string()),
@@ -48,14 +29,14 @@ export default defineSchema({
     .index('by_user1', ['user1Id'])
     .index('by_user2', ['user2Id']),
 
-  sessions: defineTable({
+  matchups: defineTable({
     sessionId: v.string(),
     user1Handle: v.string(),
     user2Handle: v.optional(v.string()),
     status: v.union(v.literal('analyzing'), v.literal('completed'), v.literal('error')),
-    compatibilityResultId: v.optional(v.id('compatibilityResults')),
+    resultId: v.optional(v.id('results')),
     errorMessage: v.optional(v.string()),
     createdAt: v.string(),
     completedAt: v.optional(v.string()),
-  }).index('by_session_id', ['sessionId']),
+  }).index('by_matchup_id', ['sessionId']),
 });
