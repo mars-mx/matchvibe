@@ -17,8 +17,8 @@ export default defineSchema({
   }).index('by_username', ['username']),
 
   results: defineTable({
-    user1Id: v.id('users'),
-    user2Id: v.id('users'),
+    user_one_username: v.string(),
+    user_two_username: v.string(),
     compatibilityScore: v.number(),
     sharedInterests: v.array(v.string()),
     complementaryTraits: v.array(v.string()),
@@ -26,9 +26,9 @@ export default defineSchema({
     overallAssessment: v.string(),
     createdAt: v.string(),
   })
-    .index('by_users', ['user1Id', 'user2Id'])
-    .index('by_user1', ['user1Id'])
-    .index('by_user2', ['user2Id']),
+    .index('by_users', ['user_one_username', 'user_two_username'])
+    .index('by_user1', ['user_one_username'])
+    .index('by_user2', ['user_two_username']),
 
   matchups: defineTable({
     sessionId: v.string(),

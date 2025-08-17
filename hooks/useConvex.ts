@@ -24,16 +24,22 @@ export function useCreateResult() {
   return useMutation(api.results.createResult);
 }
 
-export function useGetResult(user1Id: Id<'users'> | undefined, user2Id: Id<'users'> | undefined) {
-  return useQuery(api.results.getResult, user1Id && user2Id ? { user1Id, user2Id } : 'skip');
+export function useGetResult(
+  user_one_username: string | undefined,
+  user_two_username: string | undefined
+) {
+  return useQuery(
+    api.results.getResult,
+    user_one_username && user_two_username ? { user_one_username, user_two_username } : 'skip'
+  );
 }
 
 export function useGetResultById(resultId: Id<'results'> | undefined) {
   return useQuery(api.results.getResultById, resultId ? { resultId } : 'skip');
 }
 
-export function useGetUserResultHistory(userId: Id<'users'> | undefined) {
-  return useQuery(api.results.getUserResultHistory, userId ? { userId } : 'skip');
+export function useGetUserResultHistory(username: string | undefined) {
+  return useQuery(api.results.getUserResultHistory, username ? { username } : 'skip');
 }
 
 export function useCreateMatchup() {

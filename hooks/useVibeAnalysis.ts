@@ -44,8 +44,8 @@ export function useVibeAnalysis() {
 
   const analyzeCompatibility = useCallback(
     async (
-      user1Id: Id<'users'>,
-      user2Id: Id<'users'>,
+      user_one_username: string,
+      user_two_username: string,
       compatibilityData: {
         compatibilityScore: number;
         sharedInterests: string[];
@@ -56,8 +56,8 @@ export function useVibeAnalysis() {
     ) => {
       try {
         const resultId = await createResult({
-          user1Id,
-          user2Id,
+          user_one_username,
+          user_two_username,
           ...compatibilityData,
         });
         return resultId;

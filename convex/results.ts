@@ -3,8 +3,8 @@ import { mutation, query } from './_generated/server';
 
 export const createResult = mutation({
   args: {
-    user1Id: v.id('users'),
-    user2Id: v.id('users'),
+    user_one_username: v.string(),
+    user_two_username: v.string(),
     compatibilityScore: v.number(),
     sharedInterests: v.array(v.string()),
     complementaryTraits: v.array(v.string()),
@@ -22,11 +22,15 @@ export const createResult = mutation({
 });
 
 export const getResult = query({
-  args: { user1Id: v.id('users'), user2Id: v.id('users') },
+  args: { user_one_username: v.string(), user_two_username: v.string() },
   handler: async (ctx, args) => {
     const result = await ctx.db
       .query('results')
-      .withIndex('by_users', (q) => q.eq('user1Id', args.user1Id).eq('user2Id', args.user2Id))
+      .withIndex('by_users', (q) =>
+        q
+          .eq('user_one_username', args.user_one_username)
+          .eq('user_two_username', args.user_two_username)
+      )
       .order('desc')
       .first();
 
@@ -34,7 +38,11 @@ export const getResult = query({
 
     return await ctx.db
       .query('results')
-      .withIndex('by_users', (q) => q.eq('user1Id', args.user2Id).eq('user2Id', args.user1Id))
+      .withIndex('by_users', (q) =>
+        q
+          .eq('user_one_username', args.user_two_username)
+          .eq('user_two_username', args.user_one_username)
+      )
       .order('desc')
       .first();
   },
@@ -48,17 +56,17 @@ export const getResultById = query({
 });
 
 export const getUserResultHistory = query({
-  args: { userId: v.id('users') },
+  args: { username: v.string() },
   handler: async (ctx, args) => {
     const results1 = await ctx.db
       .query('results')
-      .withIndex('by_user1', (q) => q.eq('user1Id', args.userId))
+      .withIndex('by_user1', (q) => q.eq('user_one_username', args.username))
       .order('desc')
       .collect();
 
     const results2 = await ctx.db
       .query('results')
-      .withIndex('by_user2', (q) => q.eq('user2Id', args.userId))
+      .withIndex('by_user2', (q) => q.eq('user_two_username', args.username))
       .order('desc')
       .collect();
 
