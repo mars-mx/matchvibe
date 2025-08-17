@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { GlassInput } from '@/components/ui/glass-input';
 import { Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,38 +21,38 @@ export function VibeAnalysisForm({
   className,
 }: VibeAnalysisFormProps) {
   return (
-    <form action={onSubmit} className={cn('mx-auto mb-10 max-w-2xl', className)}>
+    <form
+      action={onSubmit}
+      className={cn('mx-auto mb-10 max-w-2xl', className)}
+      autoComplete="off"
+      data-form-type="other"
+      noValidate
+    >
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-3">
         {/* First Username Input */}
-        <div className="relative flex flex-1 items-center rounded-md border border-white/20 bg-white/10 backdrop-blur-sm">
-          <span className="pr-1 pl-3 text-white/70 select-none">@</span>
-          <Input
-            type="text"
-            name="userOne"
-            placeholder="marsc_hb"
-            disabled={isPending || disabled}
-            required
-            aria-label="First username input"
-            className="border-0 bg-transparent text-white placeholder:text-white/50 focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-        </div>
+        <GlassInput
+          name="userOne"
+          placeholder="marsc_hb"
+          prefix="@"
+          disabled={isPending || disabled}
+          required
+          aria-label="First username input"
+          antiAutofill={true}
+        />
 
         {/* X Symbol */}
-        <span className="text-white/50 select-none">×</span>
+        <span className="text-xl font-light text-white/60 select-none">×</span>
 
         {/* Second Username Input */}
-        <div className="relative flex flex-1 items-center rounded-md border border-white/20 bg-white/10 backdrop-blur-sm">
-          <span className="pr-1 pl-3 text-white/70 select-none">@</span>
-          <Input
-            type="text"
-            name="userTwo"
-            placeholder="richkuo7"
-            disabled={isPending || disabled}
-            required
-            aria-label="Second username input"
-            className="border-0 bg-transparent text-white placeholder:text-white/50 focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-        </div>
+        <GlassInput
+          name="userTwo"
+          placeholder="richkuo7"
+          prefix="@"
+          disabled={isPending || disabled}
+          required
+          aria-label="Second username input"
+          antiAutofill={true}
+        />
       </div>
 
       {/* Hidden Analysis Depth Field */}
