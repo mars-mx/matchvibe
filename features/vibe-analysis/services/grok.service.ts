@@ -1,6 +1,11 @@
 import { GROK_CONFIG, ERROR_MESSAGES } from '../config/constants';
-import { VIBE_COMPATIBILITY_PROMPT, ANALYSIS_INSTRUCTIONS } from '../config/prompts';
-import type { VibeAnalysisRequest, VibeAnalysisResult, GrokAPIResponse } from '../types';
+import { FETCH_PROFILE_PROMPT, MATCH_VIBE_PROMPT, PROMPT_MODELS } from '../config/prompts';
+import type {
+  VibeAnalysisRequest,
+  VibeAnalysisResult,
+  GrokAPIResponse,
+  UserProfile,
+} from '../types';
 import {
   ConfigError,
   ExternalAPIError,
@@ -8,9 +13,15 @@ import {
   RateLimitError,
   NotFoundError,
 } from '@/shared/lib/errors';
-import { grokAPIResponseSchema, vibeAnalysisResultSchema } from '../schemas';
+import { grokAPIResponseSchema } from '../schemas';
+import {
+  userProfileSchema,
+  userProfileErrorSchema,
+  matchingResultSchema,
+} from '../schemas/profile.schema';
 import { createChildLogger } from '@/lib/logger';
 import { CircuitBreaker } from '@/lib/circuit-breaker';
+import { trackGrokUsage, createSessionTracker } from '../lib/usage-tracker';
 
 const logger = createChildLogger('GrokService');
 
@@ -22,12 +33,37 @@ const grokCircuitBreaker = new CircuitBreaker({
   expectedThreshold: 0.7, // 70% success rate expected
 });
 
+// API configuration type
+interface GrokAPIOptions {
+  model: string;
+  temperature: number;
+  maxTokens?: number; // Made optional since we sometimes use undefined
+  searchParameters?: {
+    dataSources: string[];
+    maxResults: number;
+  };
+}
+
+// Context for API calls to enable better error tracking
+interface GrokAPIContext {
+  model: string;
+  operation: 'fetchProfile' | 'matchVibe' | 'unknown';
+  endpoint: string;
+  timeout: number;
+  hasSearch: boolean;
+  username?: string;
+  requestSize?: number;
+  startTime?: number;
+}
+
 /**
- * Service for analyzing vibe compatibility between X users using Grok-4 AI
+ * Service for analyzing vibe compatibility between X users using Grok AI
+ * Uses two-tier architecture: Grok-3-mini for profile fetching, Grok-4 for matching
  * Includes circuit breaker protection and enhanced error handling
  */
 export class GrokService {
   private readonly apiKey: string;
+  private sessionTracker: ReturnType<typeof createSessionTracker> | null = null;
 
   constructor(apiKey: string) {
     if (!apiKey) {
@@ -37,12 +73,132 @@ export class GrokService {
   }
 
   /**
-   * Analyzes the vibe compatibility between two X users using Grok's real-time search
-   * Includes circuit breaker protection for resilience
+   * Fetches a user profile from X using Grok-3-mini's search capabilities
+   * @param username - The X username to fetch (without @)
+   * @returns User profile data or throws error if not found
+   */
+  async fetchProfile(username: string): Promise<UserProfile> {
+    try {
+      const sanitizedUsername = this.sanitizeForPrompt(username);
+      const userPrompt = `Fetch profile for X user: @${sanitizedUsername}`;
+
+      // Debug logging
+      logger.debug(
+        {
+          username: sanitizedUsername,
+          model: PROMPT_MODELS.fetchProfile.model,
+          searchEnabled: !!PROMPT_MODELS.fetchProfile.searchParameters,
+        },
+        'Fetching profile'
+      );
+
+      const response = await this.callGrokAPI(
+        FETCH_PROFILE_PROMPT,
+        userPrompt,
+        PROMPT_MODELS.fetchProfile,
+        {
+          operation: 'fetchProfile',
+          username: sanitizedUsername,
+        }
+      );
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new NotFoundError('X user', username);
+      }
+
+      const parsed = this.parseJsonSafely(content);
+
+      // Check for error response
+      if (parsed.error) {
+        const errorData = userProfileErrorSchema.parse(parsed);
+        throw new NotFoundError('X user', errorData.username);
+      }
+
+      // Validate and return profile
+      return userProfileSchema.parse(parsed);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        throw error;
+      }
+
+      logger.error(
+        { error: error instanceof Error ? error.message : 'Unknown error', username },
+        'Failed to fetch user profile'
+      );
+      throw new ExternalAPIError('Grok', `Failed to fetch profile for @${username}`, error);
+    }
+  }
+
+  /**
+   * Matches two user profiles to determine compatibility
+   * @param profileOne - First user's profile
+   * @param profileTwo - Second user's profile
+   * @returns Compatibility analysis result
+   */
+  private async matchVibes(
+    profileOne: UserProfile,
+    profileTwo: UserProfile
+  ): Promise<VibeAnalysisResult> {
+    try {
+      const profilesData = JSON.stringify({
+        userOne: profileOne,
+        userTwo: profileTwo,
+      });
+
+      const response = await this.callGrokAPI(
+        MATCH_VIBE_PROMPT,
+        profilesData,
+        PROMPT_MODELS.matchVibe,
+        {
+          operation: 'matchVibe',
+        }
+      );
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('Empty response from Grok API');
+      }
+
+      const parsed = this.parseJsonSafely(content);
+      const result = matchingResultSchema.parse(parsed);
+
+      // Transform to VibeAnalysisResult format for backward compatibility
+      return {
+        score: result.score,
+        analysis: result.analysis,
+        strengths: result.strengths,
+        challenges: result.challenges,
+        sharedInterests: result.sharedInterests,
+        vibeType: result.vibeType,
+        recommendation: result.recommendation,
+        metadata: {
+          userOne: profileOne.username,
+          userTwo: profileTwo.username,
+          sourcesUsed: 0, // Not applicable for matching phase
+          timestamp: result.metadata.timestamp,
+        },
+      };
+    } catch (error) {
+      logger.error(
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        'Failed to match vibes'
+      );
+      throw new ExternalAPIError('Grok', 'Failed to analyze compatibility', error);
+    }
+  }
+
+  /**
+   * Analyzes the vibe compatibility between two X users using two-prompt architecture
+   * Step 1: Fetch both profiles in parallel using Grok-3-mini
+   * Step 2: Match vibes using Grok-4
    * @param request - The analysis request containing both usernames
    * @returns Vibe compatibility result with score and insights
    */
   async analyzeVibe(request: VibeAnalysisRequest): Promise<VibeAnalysisResult> {
+    // Create session tracker for this analysis
+    this.sessionTracker = createSessionTracker();
+
     try {
       // Check circuit breaker state
       if (!grokCircuitBreaker.isAvailable()) {
@@ -56,10 +212,42 @@ export class GrokService {
 
       // Execute with circuit breaker protection
       return await grokCircuitBreaker.execute(async () => {
-        const systemPrompt = VIBE_COMPATIBILITY_PROMPT;
-        const userPrompt = this.buildUserPrompt(request);
-        const grokResponse = await this.callGrokAPI(systemPrompt, userPrompt, request);
-        return this.parseGrokResponse(grokResponse, request);
+        // Step 1: Fetch both profiles in parallel
+        const [profileOne, profileTwo] = await Promise.all([
+          this.fetchProfile(request.userOne),
+          this.fetchProfile(request.userTwo),
+        ]);
+
+        // Debug log the fetched profiles
+        logger.debug({ profileOne }, 'Fetched profile one');
+        logger.debug({ profileTwo }, 'Fetched profile two');
+
+        // Step 2: Match vibes using Grok-4
+        const result = await this.matchVibes(profileOne, profileTwo);
+
+        // Debug log the final result
+        logger.debug({ result }, 'Vibe analysis result');
+
+        // Log session summary with total costs
+        if (this.sessionTracker) {
+          this.sessionTracker.logSessionSummary(logger);
+
+          // Log completion
+          logger.info(
+            {
+              userOne: request.userOne,
+              userTwo: request.userTwo,
+              score: result.score,
+              sessionCost: this.sessionTracker.getSessionUsage().totalCost.toFixed(6),
+            },
+            'Vibe analysis completed'
+          );
+
+          // Clear session tracker
+          this.sessionTracker = null;
+        }
+
+        return result;
       });
     } catch (error) {
       // Re-throw known errors
@@ -82,33 +270,133 @@ export class GrokService {
   }
 
   /**
-   * Builds the user prompt for Grok based on the analysis request
-   * Includes prompt injection protection
+   * Centralized error handler for Grok API calls
+   * Provides detailed logging and consistent error mapping
    */
-  private buildUserPrompt(request: VibeAnalysisRequest): string {
-    const { userOne, userTwo, analysisDepth = 'standard' } = request;
+  private handleGrokAPIError(error: unknown, context: GrokAPIContext): never {
+    const elapsedTime = context.startTime ? Date.now() - context.startTime : undefined;
 
-    // Sanitize usernames to prevent prompt injection
-    const sanitizedUserOne = this.sanitizeForPrompt(userOne);
-    const sanitizedUserTwo = this.sanitizeForPrompt(userTwo);
+    // Build comprehensive error context
+    const errorContext = {
+      ...context,
+      elapsedTime,
+      timestamp: new Date().toISOString(),
+      error:
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+              cause: (error as Error & { cause?: unknown }).cause,
+            }
+          : error,
+    };
 
-    return `${ANALYSIS_INSTRUCTIONS.searchFirst}
-${ANALYSIS_INSTRUCTIONS.analyzeQuality}
-${ANALYSIS_INSTRUCTIONS.checkEngagement}
+    // Re-throw our custom errors as-is (they're already logged)
+    if (
+      error instanceof RateLimitError ||
+      error instanceof NotFoundError ||
+      error instanceof ExternalAPIError
+    ) {
+      logger.warn(errorContext, `Grok API returned error during ${context.operation}`);
+      throw error;
+    }
 
-Analyze the vibe compatibility between X users @${sanitizedUserOne} and @${sanitizedUserTwo}.
-Analysis depth: ${analysisDepth}
+    // Handle timeout errors
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.error(
+        {
+          ...errorContext,
+          errorType: 'timeout',
+        },
+        `Grok API timeout after ${context.timeout}ms during ${context.operation}`
+      );
+      throw new NetworkError('Grok API', error, {
+        timeout: context.timeout,
+        operation: context.operation,
+        model: context.model,
+      });
+    }
 
-Key Analysis Points:
-1. Search X for recent tweets from both users (last 7-14 days)
-2. Calculate their shitpost vs quality content ratio
-3. Analyze their engagement patterns (replies, interactions, response rates)
-4. Compare their content styles (memes, threads, original vs retweets)
-5. Determine compatibility based on matching vibes (shitposters with shitposters, etc.)
+    // Handle network/connection errors
+    if (error instanceof TypeError) {
+      const isNetworkError =
+        error.message.includes('fetch') ||
+        error.message.includes('network') ||
+        error.message.includes('ECONNREFUSED') ||
+        error.message.includes('ENOTFOUND') ||
+        error.message.includes('ETIMEDOUT');
 
-${ANALYSIS_INSTRUCTIONS.matchStyles}
+      if (isNetworkError) {
+        const errorType = error.message.includes('ECONNREFUSED')
+          ? 'connection_refused'
+          : error.message.includes('ENOTFOUND')
+            ? 'dns_failure'
+            : error.message.includes('ETIMEDOUT')
+              ? 'connection_timeout'
+              : 'network_error';
 
-Provide a compatibility score (0-100) heavily weighted by content style alignment and interaction compatibility.`;
+        logger.error(
+          {
+            ...errorContext,
+            errorType,
+          },
+          `Network error (${errorType}) connecting to Grok API during ${context.operation}`
+        );
+
+        throw new NetworkError('Grok API', error, {
+          errorType,
+          operation: context.operation,
+          endpoint: context.endpoint,
+          model: context.model,
+        });
+      }
+    }
+
+    // Handle JSON parsing errors
+    if (error instanceof SyntaxError && error.message.includes('JSON')) {
+      logger.error(
+        {
+          ...errorContext,
+          errorType: 'json_parse_error',
+        },
+        `Failed to parse Grok API response during ${context.operation}`
+      );
+      throw new ExternalAPIError(
+        'Grok',
+        `Invalid JSON response during ${context.operation}`,
+        error,
+        502
+      );
+    }
+
+    // Handle Zod validation errors
+    if (error instanceof Error && error.name === 'ZodError') {
+      logger.error(
+        {
+          ...errorContext,
+          errorType: 'validation_error',
+        },
+        `Response validation failed during ${context.operation}`
+      );
+      throw new ExternalAPIError(
+        'Grok',
+        `Invalid API response format during ${context.operation}`,
+        error,
+        502
+      );
+    }
+
+    // Handle unknown errors
+    logger.error(
+      {
+        ...errorContext,
+        errorType: 'unknown',
+      },
+      `Unexpected error during Grok API ${context.operation}`
+    );
+
+    throw new ExternalAPIError('Grok', `Unexpected error during ${context.operation}`, error, 500);
   }
 
   /**
@@ -136,44 +424,111 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
   }
 
   /**
-   * Calls the Grok API with search parameters enabled
+   * Calls the Grok API with configurable model and parameters
    */
   private async callGrokAPI(
     systemPrompt: string,
     userPrompt: string,
-    request?: VibeAnalysisRequest
+    options: GrokAPIOptions,
+    context?: Partial<GrokAPIContext>
   ): Promise<GrokAPIResponse> {
+    const endpoint = `${GROK_CONFIG.baseUrl}/chat/completions`;
+    const startTime = Date.now();
+
+    // Use longer timeout when search is enabled
+    const timeoutMs = options.searchParameters
+      ? GROK_CONFIG.timeouts.searchEnabled
+      : GROK_CONFIG.timeouts.request;
+
+    // Build full context for error handling
+    const fullContext: GrokAPIContext = {
+      model: options.model,
+      operation: context?.operation || 'unknown',
+      endpoint,
+      timeout: timeoutMs,
+      hasSearch: !!options.searchParameters,
+      username: context?.username,
+      requestSize: JSON.stringify({ systemPrompt, userPrompt, options }).length,
+      startTime,
+      ...context,
+    };
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), GROK_CONFIG.timeouts.request);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(`${GROK_CONFIG.baseUrl}/chat/completions`, {
+      // Log the API call initiation
+      logger.debug(
+        {
+          model: options.model,
+          operation: fullContext.operation,
+          hasSearch: fullContext.hasSearch,
+          username: fullContext.username,
+          timeout: timeoutMs,
+        },
+        `Initiating Grok API call for ${fullContext.operation} with ${timeoutMs}ms timeout`
+      );
+
+      const body: Record<string, unknown> = {
+        model: options.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: options.temperature,
+        response_format: { type: 'json_object' },
+      };
+
+      // Only add max_tokens if it's defined
+      if (options.maxTokens !== undefined) {
+        body.max_tokens = options.maxTokens;
+      }
+
+      // Add search parameters if provided
+      if (options.searchParameters) {
+        body.search_parameters = {
+          mode: 'on', // Force search to be enabled
+          sources: options.searchParameters.dataSources.map((source) => ({ type: source })),
+          max_search_results: options.searchParameters.maxResults,
+          return_citations: true, // Include citations for transparency
+        };
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
         signal: controller.signal,
-        body: JSON.stringify({
-          model: GROK_CONFIG.model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          searchParameters: {
-            searchMode: GROK_CONFIG.search.mode,
-            dataSources: GROK_CONFIG.search.dataSources,
-            maxResults: GROK_CONFIG.search.maxResults,
-          },
-          temperature: GROK_CONFIG.generation.temperature,
-          max_tokens: GROK_CONFIG.generation.maxTokens,
-          response_format: GROK_CONFIG.generation.responseFormat,
-        }),
+        body: JSON.stringify(body),
       });
 
       clearTimeout(timeout);
 
+      const responseTime = Date.now() - startTime;
+      logger.debug(
+        {
+          status: response.status,
+          responseTime,
+          operation: fullContext.operation,
+        },
+        `Grok API response received in ${responseTime}ms`
+      );
+
       if (!response.ok) {
+        // Log the error details for debugging
+        const errorText = await response.text();
+        logger.error(
+          {
+            status: response.status,
+            statusText: response.statusText,
+            errorBody: errorText,
+            requestBody: body,
+          },
+          'Grok API error response'
+        );
+
         if (response.status === 429) {
           // Extract retry-after header if available
           const retryAfter = response.headers.get('retry-after');
@@ -184,111 +539,35 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
         }
 
         if (response.status === 404) {
-          throw new NotFoundError('X user', request?.userOne || request?.userTwo);
+          throw new NotFoundError('X user', 'unknown');
         }
 
-        // Handle other API errors
-        throw await ExternalAPIError.fromResponse('Grok', response, 'vibe analysis');
+        // Handle other API errors - recreate response for error handling
+        const errorResponse = new Response(errorText, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+        throw await ExternalAPIError.fromResponse('Grok', errorResponse, 'vibe analysis');
       }
 
       const rawData = await response.json();
       const data = grokAPIResponseSchema.parse(rawData);
 
-      // Log search usage for monitoring
-      if (data.usage?.num_sources_used) {
-        logger.info(
-          { sources: data.usage.num_sources_used },
-          `Searched ${data.usage.num_sources_used} X sources`
-        );
+      // Track API usage and costs
+      trackGrokUsage(options.model, data.usage, logger);
+
+      // Track in session if available
+      if (this.sessionTracker) {
+        this.sessionTracker.track(options.model, data.usage);
       }
 
       return data;
     } catch (error) {
       clearTimeout(timeout);
 
-      // Re-throw our custom errors
-      if (
-        error instanceof RateLimitError ||
-        error instanceof NotFoundError ||
-        error instanceof ExternalAPIError
-      ) {
-        throw error;
-      }
-
-      // Handle network errors
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new NetworkError('Grok API', error, {
-          timeout: GROK_CONFIG.timeouts.request,
-        });
-      }
-
-      // Handle other network errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new NetworkError('Grok API', error);
-      }
-
-      // Re-throw unknown errors
-      throw error;
-    }
-  }
-
-  /**
-   * Parses the Grok API response into a structured result with enhanced safety
-   */
-  private parseGrokResponse(
-    response: GrokAPIResponse,
-    request: VibeAnalysisRequest
-  ): VibeAnalysisResult {
-    try {
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('Empty response from Grok API');
-      }
-
-      // Enhanced JSON parsing with safety checks
-      const parsed = this.parseJsonSafely(content);
-
-      // Validate and normalize the score with additional safety
-      const rawScore = parsed.score;
-      const score = this.validateScore(rawScore);
-
-      // Sanitize text fields to prevent potential issues
-      const analysis = this.sanitizeText(parsed.analysis || 'Compatibility analysis completed');
-      const strengths = this.sanitizeArrayOfStrings(parsed.strengths || []);
-      const challenges = this.sanitizeArrayOfStrings(parsed.challenges || []);
-      const sharedInterests = this.sanitizeArrayOfStrings(parsed.sharedInterests || []);
-
-      const result = {
-        score,
-        analysis,
-        strengths,
-        challenges,
-        sharedInterests,
-        metadata: {
-          userOne: request.userOne,
-          userTwo: request.userTwo,
-          sourcesUsed: response.usage?.num_sources_used || 0,
-          timestamp: new Date().toISOString(),
-        },
-      };
-
-      // Validate the result structure with Zod
-      return vibeAnalysisResultSchema.parse(result);
-    } catch (error) {
-      logger.error(
-        {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          rawContentPreview: response.choices[0]?.message?.content?.substring(0, 200),
-        },
-        'Failed to parse Grok response'
-      );
-
-      // Throw a proper error instead of returning fake success
-      throw new ExternalAPIError(
-        'Grok',
-        'Failed to parse analysis response. The AI model returned an unexpected format.',
-        error
-      );
+      // Use centralized error handler
+      this.handleGrokAPIError(error, fullContext);
     }
   }
 
@@ -312,57 +591,5 @@ Provide a compatibility score (0-100) heavily weighted by content style alignmen
     }
 
     return parsed as Record<string, unknown>;
-  }
-
-  /**
-   * Validate and normalize score value
-   */
-  private validateScore(rawScore: unknown): number {
-    if (typeof rawScore === 'number' && !isNaN(rawScore)) {
-      return Math.min(100, Math.max(0, Math.round(rawScore)));
-    }
-
-    if (typeof rawScore === 'string') {
-      const numericScore = parseFloat(rawScore);
-      if (!isNaN(numericScore)) {
-        return Math.min(100, Math.max(0, Math.round(numericScore)));
-      }
-    }
-
-    // Default to neutral score if invalid
-    logger.warn({ rawScore }, 'Invalid score received, defaulting to 50');
-    return 50;
-  }
-
-  /**
-   * Sanitize text content to prevent issues
-   */
-  private sanitizeText(text: unknown): string {
-    if (typeof text !== 'string') {
-      return 'Analysis unavailable';
-    }
-
-    return (
-      text
-        .trim()
-        .substring(0, 1000) // Limit length
-        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') || // Remove control chars
-      'Analysis unavailable'
-    );
-  }
-
-  /**
-   * Sanitize array of strings with validation
-   */
-  private sanitizeArrayOfStrings(arr: unknown): string[] {
-    if (!Array.isArray(arr)) {
-      return [];
-    }
-
-    return arr
-      .filter((item): item is string => typeof item === 'string')
-      .map((item) => this.sanitizeText(item))
-      .filter((item) => item.length > 0)
-      .slice(0, 10); // Limit array size
   }
 }

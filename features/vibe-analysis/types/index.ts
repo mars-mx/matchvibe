@@ -10,6 +10,49 @@ export interface VibeAnalysisRequest {
   analysisDepth?: 'quick' | 'standard' | 'deep';
 }
 
+// User Profile type - fetched from X via Grok
+export interface UserProfile {
+  username: string;
+  displayName: string | null;
+
+  recentTweets: Array<{
+    text: string;
+    isReply?: boolean;
+    hasMedia?: boolean;
+  }> | null;
+
+  contentStyle: {
+    primaryContentType: 'shitposts' | 'serious' | 'mixed' | 'news' | 'personal' | null;
+    humorStyle: 'sarcastic' | 'wholesome' | 'edgy' | 'dry' | 'none' | null;
+    tone: 'positive' | 'negative' | 'neutral' | 'mixed' | null;
+    usesEmojis: boolean | null;
+    formality: 'very_formal' | 'formal' | 'casual' | 'very_casual' | null;
+    shitpostRating: number | null;
+    memeRating: number | null;
+    qualityRating: number | null;
+  };
+
+  topTopics: string[] | null;
+  notableTraits: string[] | null;
+
+  searchConfidence: number;
+  dataCompleteness: number;
+
+  // Optional citations from Grok search
+  citations?: Array<{
+    id?: number;
+    source?: string;
+    url?: string;
+    text?: string;
+  }> | null;
+}
+
+// Profile fetch error type
+export interface UserProfileError {
+  error: string;
+  username: string;
+}
+
 // Result type - compatibility analysis only
 export interface VibeAnalysisResult {
   score: number; // -1 for error, 0-100 for compatibility score
@@ -17,6 +60,8 @@ export interface VibeAnalysisResult {
   strengths: string[]; // Compatibility strengths
   challenges: string[]; // Potential challenges
   sharedInterests: string[]; // Common interests
+  vibeType?: 'perfect_match' | 'complementary' | 'growth' | 'challenging' | 'incompatible'; // Optional vibe category
+  recommendation?: string; // Optional interaction advice
   metadata: {
     userOne: string;
     userTwo: string;

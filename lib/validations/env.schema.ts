@@ -16,6 +16,13 @@ const envSchema = z
 
     GROK_MODEL_VERSION: z.string().default('grok-4-0709').describe('Grok model version to use'),
 
+    GROK_MAX_TOKENS: z
+      .string()
+      .transform((val) => parseInt(val, 10))
+      .pipe(z.number().positive().int())
+      .default(10000)
+      .describe('Maximum tokens for Grok API responses'),
+
     LOG_LEVEL: z
       .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
       .default('info')

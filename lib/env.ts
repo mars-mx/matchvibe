@@ -56,6 +56,14 @@ export function getGrokModelVersion(): string {
 }
 
 /**
+ * Get Grok max tokens
+ * @returns Configured maximum tokens for Grok responses
+ */
+export function getGrokMaxTokens(): number {
+  return env.GROK_MAX_TOKENS;
+}
+
+/**
  * Get log level
  * @returns Configured log level
  */

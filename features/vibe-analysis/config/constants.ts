@@ -33,11 +33,12 @@ export const GROK_CONFIG = {
     maxRetries: 2,
   },
 
-  // Timeouts - reduced for better user experience and security
+  // Timeouts - increased for search operations with reasoning
   timeouts: {
-    request: 20000, // 20 seconds (reduced from 30)
-    search: 10000, // 10 seconds for search operations (reduced from 15)
-    connection: 5000, // 5 seconds for connection establishment
+    request: 120000, // 120 seconds default (increased for reasoning models)
+    searchEnabled: 180000, // 180 seconds when search is enabled (Grok search with 100 results can be slow)
+    search: 30000, // 30 seconds for search operations alone
+    connection: 10000, // 10 seconds for connection establishment
   },
 };
 
@@ -58,4 +59,43 @@ export const ERROR_MESSAGES = {
   RATE_LIMIT: 'API rate limit exceeded, please try again later',
   INVALID_USERNAME: 'Invalid X username format',
   NETWORK_ERROR: 'Network error connecting to Grok API',
+} as const;
+
+// Grok API Pricing (per million tokens)
+export const GROK_PRICING = {
+  'grok-4-0709': {
+    input: 3.0, // $3.00 per 1M input tokens
+    output: 15.0, // $15.00 per 1M output tokens
+  },
+  'grok-3': {
+    input: 3.0, // $3.00 per 1M input tokens
+    output: 15.0, // $15.00 per 1M output tokens
+  },
+  'grok-3-mini': {
+    input: 0.3, // $0.30 per 1M input tokens
+    output: 0.5, // $0.50 per 1M output tokens
+  },
+} as const;
+
+// Grok Live Search Pricing
+export const LIVE_SEARCH_PRICING = {
+  costPerSource: 0.025, // $0.025 per source used
+  costPer1000Sources: 25.0, // $25 per 1,000 sources
+} as const;
+
+// Grok API Rate Limits
+export const GROK_RATE_LIMITS = {
+  'grok-4-0709': {
+    contextWindow: 256000,
+    tokensPerMinute: 2000000,
+    requestsPerMinute: 480,
+  },
+  'grok-3': {
+    contextWindow: 131072,
+    requestsPerMinute: 600,
+  },
+  'grok-3-mini': {
+    contextWindow: 131072,
+    requestsPerMinute: 480,
+  },
 } as const;
