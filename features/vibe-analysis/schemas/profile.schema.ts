@@ -36,16 +36,60 @@ export const userProfileSchema = z.object({
   dataCompleteness: z.number().min(0).max(100),
 
   // Optional citations field from Grok search
+  // Preprocessor handles various formats Grok might return
   citations: z
-    .array(
-      z.object({
-        id: z.number().optional(),
-        source: z.string().optional(),
-        url: z.string().optional(),
-        text: z.string().optional(),
-      })
+    .preprocess(
+      (val) => {
+        // Handle various formats Grok might return
+        if (val === null || val === undefined) {
+          return null;
+        }
+
+        // Handle string values like "none", "", "[]", etc.
+        if (typeof val === 'string') {
+          if (val === '' || val === 'none' || val === 'null' || val === '[]') {
+            return null;
+          }
+          // Try to parse if it looks like JSON
+          try {
+            const parsed = JSON.parse(val);
+            return Array.isArray(parsed) ? parsed : null;
+          } catch {
+            return null;
+          }
+        }
+
+        // Handle arrays
+        if (Array.isArray(val)) {
+          // Handle case where array contains strings (e.g., ["none"] or [""])
+          if (val.every((item) => typeof item === 'string')) {
+            // If all elements are strings, it's likely an error response
+            return null;
+          }
+
+          // Filter out invalid entries (strings, nulls, etc.)
+          const validCitations = val.filter(
+            (item) => typeof item === 'object' && item !== null && !Array.isArray(item)
+          );
+
+          // Return null if no valid citations
+          return validCitations.length > 0 ? validCitations : null;
+        }
+
+        // For any other type, return null
+        return null;
+      },
+      z
+        .array(
+          z.object({
+            id: z.number().optional(),
+            source: z.string().optional(),
+            url: z.string().optional(),
+            text: z.string().optional(),
+          })
+        )
+        .nullable()
     )
-    .nullable()
     .optional(),
 });
 

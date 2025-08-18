@@ -1,4 +1,4 @@
-import { GrokService } from '@/features/vibe-analysis/services/grok.service';
+import { GrokService } from '@/features/vibe-analysis/services/grok/grok.service';
 import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/request.schema';
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import { getGrokApiKey } from '@/lib/env';

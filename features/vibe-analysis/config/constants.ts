@@ -26,7 +26,8 @@ export const GROK_CONFIG = {
     responseFormat: { type: 'json_object' } as const, // Ensure JSON response
   },
 
-  // Rate Limiting
+  // Rate Limiting (Legacy - kept for backward compatibility)
+  // New rate limiting is handled by GrokRateLimiter and GrokRetryManager
   rateLimit: {
     maxRequestsPerMinute: 30,
     retryDelay: 1000, // ms
@@ -83,16 +84,21 @@ export const LIVE_SEARCH_PRICING = {
   costPer1000Sources: 25.0, // $25 per 1,000 sources
 } as const;
 
-// Grok API Rate Limits
+// Grok API Rate Limits (Official from xAI documentation)
 export const GROK_RATE_LIMITS = {
   'grok-4-0709': {
     contextWindow: 256000,
     tokensPerMinute: 2000000,
     requestsPerMinute: 480,
   },
+  'grok-4': {
+    contextWindow: 256000,
+    tokensPerMinute: 2000000,
+    requestsPerMinute: 480,
+  },
   'grok-3': {
     contextWindow: 131072,
-    requestsPerMinute: 600,
+    requestsPerMinute: 600, // Higher RPM than grok-4
   },
   'grok-3-mini': {
     contextWindow: 131072,

@@ -15,7 +15,8 @@
     "convex:dev": "convex dev",
     "convex:codegen": "convex codegen",
     "convex:deploy": "convex deploy",
-    "test:grok": "tsx scripts/test-grok-service.ts"
+    "test:grok": "tsx scripts/test-grok-service.ts",
+    "test:rate-limit": "tsx scripts/test-rate-limiting.ts"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
@@ -33,6 +34,7 @@
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
     "next-themes": "^0.4.6",
+    "p-retry": "^6.2.1",
     "pino": "^9.9.0",
     "pino-pretty": "^13.1.1",
     "react": "19.1.0",
