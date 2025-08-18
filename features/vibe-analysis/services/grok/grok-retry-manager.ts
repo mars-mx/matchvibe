@@ -5,10 +5,9 @@
 
 import pRetry, { AbortError } from 'p-retry';
 import { createChildLogger } from '@/lib/logger';
-import { validateEnv } from '@/lib/validations/env.schema';
+import { getEnv } from '@/lib/env';
 
 const logger = createChildLogger('GrokRetryManager');
-const env = validateEnv();
 
 export interface RetryOptions {
   maxAttempts?: number;
@@ -238,6 +237,7 @@ export class GrokRetryManager {
    * Build configuration from options and environment
    */
   private buildConfig(options?: RetryOptions): Required<RetryOptions> {
+    const env = getEnv();
     return {
       maxAttempts: options?.maxAttempts ?? env.GROK_RETRY_MAX_ATTEMPTS,
       minTimeout: options?.minTimeout ?? env.GROK_RETRY_MIN_TIMEOUT_MS,
