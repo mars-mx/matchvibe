@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MatchVibe is an open-source tool for analyzing compatibility between X (Twitter) users using AI-driven vibe scoring (0-100). Currently in early development stage with basic Next.js scaffolding.
+MatchVibe is an open-source tool for analyzing compatibility between X (Twitter) users using AI-driven vibe scoring (0-100). The application uses a two-tier Grok API architecture to fetch user profiles and analyze compatibility with glass morphism UI design.
 
 ## Development Commands
 
@@ -52,25 +52,40 @@ npx shadcn@latest add
 
 - **Framework**: Next.js 15.4.6 with App Router
 - **Language**: TypeScript with strict mode
-- **Styling**: Tailwind CSS v4 with PostCSS
+- **Styling**: Tailwind CSS v4 with PostCSS, Glass morphism design
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
 - **Icons**: Lucide React
 - **Fonts**: Geist Sans & Geist Mono
 - **Security**: Rate limiting (Upstash Redis), Bot protection (BotId)
-- **AI Integration**: Grok API for vibe analysis
+- **AI Integration**: Two-tier Grok API architecture (profile fetching + analysis)
+- **Error Handling**: Circuit breaker pattern, retry logic with exponential backoff
+- **Performance**: Usage tracking, request caching
 
 ### Project Structure
 
 - `/app` - App Router pages and layouts (no `/src` directory)
+  - `/app/vibe/[user1]/[user2]` - Dynamic vibe analysis pages
 - `/public` - Static assets
 - `/lib` - Utility functions and shadcn utils
   - `/lib/security` - Security middleware (rate limiting, bot protection)
   - `/lib/validations` - Zod schemas for validation
+  - `/lib/config` - Application constants and theme configuration
+  - `/lib/parsers` - Text parsing utilities
 - `/components` - React components
-- `/components/ui` - shadcn/ui components
-- `/features` - Feature-specific modules (vibe-analysis)
+  - `/components/ui` - shadcn/ui components (including glass-input)
+  - `/components/sections` - Page sections (Hero, VibeAnalysisForm, VibeAnalysisResults)
+  - `/components/providers` - Context providers (BotId, SpeedInsights)
+- `/features/vibe-analysis` - Vibe analysis feature module
+  - `/components` - Feature-specific UI components
+  - `/services` - Business logic and API integration
+    - `/grok` - Modular Grok service architecture
+    - `/transformers` - Data transformation utilities
+  - `/schemas` - Zod validation schemas
+  - `/config` - Feature constants and prompts
+  - `/lib` - Feature utilities (API client, usage tracker)
 - `/shared` - Shared utilities and error handling
 - `/middleware.ts` - Edge middleware for rate limiting on /vibe/\* routes
+- `/widgets` - Standalone widget components
 
 ### Key Configurations
 
@@ -110,8 +125,16 @@ npx shadcn@latest add
 - Import components using: `import { Button } from '@/components/ui/button'`
 - Components are fully customizable - modify them as needed
 - Use `cn()` utility from `/lib/utils` for conditional styling
-- Available components: Button, Input, Label, Separator, Card, Badge
+- Available components: Button, Input, Label, Separator, Card, Badge, Alert, Progress, Skeleton, Sonner (toast), GlassInput, LinkedText
 - Add new components with: `npx shadcn@latest add [component-name]`
+
+### UI Design System
+
+- **Glass Morphism**: Primary design pattern with backdrop blur and transparency
+- **GlassInput Component**: Custom input with advanced autofill prevention and liquid glass effects
+- **Animations**: Smooth transitions with Tailwind CSS animations
+- **Loading States**: Skeleton screens and progress indicators for async operations
+- **Toast Notifications**: Sonner integration for user feedback
 
 ### Validation Strategy
 
@@ -123,10 +146,11 @@ MatchVibe uses Zod (v4) for comprehensive runtime validation:
 features/vibe-analysis/schemas/
 ├── request.schema.ts   # Request validation (usernames, analysis depth)
 ├── response.schema.ts  # Response validation (results, errors, API responses)
+├── profile.schema.ts   # X/Twitter profile data validation
 └── index.ts           # Central exports with type inference
 
 lib/validations/
-└── env.schema.ts      # Environment variable validation
+└── env.schema.ts      # Environment variable validation with comprehensive checks
 ```
 
 #### Usage Examples
@@ -247,17 +271,51 @@ fix(api): handle null response from X API
 docs: update README with setup instructions
 ```
 
+## Grok Service Architecture
+
+### Two-Tier Architecture
+
+The vibe analysis uses a modular Grok service with two-tier architecture:
+
+1. **Profile Fetching**: Retrieves X/Twitter user profiles via Grok API
+2. **Compatibility Analysis**: Analyzes compatibility between two profiles
+
+### Service Components
+
+```
+features/vibe-analysis/services/
+├── grok/
+│   ├── grok.service.ts         # Main service orchestrator
+│   ├── grok-api-client.ts      # API communication layer
+│   ├── grok-prompt-builder.ts  # Dynamic prompt generation
+│   ├── grok-retry-manager.ts   # Retry logic with exponential backoff
+│   └── grok-error-handler.ts   # Comprehensive error handling
+├── transformers/
+│   ├── profile.transformer.ts  # Profile data transformation
+│   └── result.transformer.ts   # Result formatting
+└── analyze.service.ts          # Main analysis orchestrator
+```
+
+### Key Features
+
+- **Circuit Breaker Pattern**: Prevents cascading failures
+- **Retry Logic**: Exponential backoff with jitter for transient failures
+- **Usage Tracking**: Monitor API usage and costs
+- **Request Caching**: Reduces duplicate API calls
+- **Error Recovery**: Graceful degradation and fallback strategies
+
 ## Planned Features & TODOs
 
 From README roadmap:
 
 1. ~~UI component library (Shadcn) integration~~ ✅ Complete
 2. ~~Rate limiting and bot protection~~ ✅ Complete
-3. X API integration for user fetching
-4. Vibe analysis algorithm implementation
-5. Results UI with score visualization
-6. Share functionality
-7. Error handling and edge cases
+3. ~~Vibe analysis algorithm implementation~~ ✅ Complete
+4. ~~Results UI with score visualization~~ ✅ Complete
+5. ~~Glass morphism UI design~~ ✅ Complete
+6. X API integration for user fetching (currently using Grok)
+7. Share functionality (partially complete)
+8. ~~Error handling and edge cases~~ ✅ Complete
 
 ## Environment Variables
 
@@ -302,11 +360,21 @@ Configured for Vercel deployment with one-click deploy button in README.
 ### Testing Rate Limiting
 
 ```bash
-# Test rate limit headers
-curl -I http://localhost:3000/api/vibe/analyze
+# Test rate limit headers on vibe analysis pages
+curl -I http://localhost:3000/vibe/user1/user2
 
 # Check headers:
 # X-RateLimit-Limit: 20
 # X-RateLimit-Remaining: 19
 # X-RateLimit-Reset: 2025-01-16T10:30:00Z
+```
+
+### Testing Grok Service
+
+```bash
+# Run the Grok service test script
+npm run test:grok
+
+# Or directly with TypeScript
+npx tsx scripts/test-grok-service.ts
 ```
