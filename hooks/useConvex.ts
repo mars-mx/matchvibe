@@ -2,42 +2,41 @@
 
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@/convex/_generated/api';
-import type { Id } from '@/convex/_generated/dataModel';
 
-export function useCreateResult() {
-  return useMutation(api.results.createResult);
+// User Profile hooks
+export function useUpsertProfile() {
+  return useMutation(api.userProfiles.upsertProfile);
 }
 
-export function useGetResult(
-  user_one_username: string | undefined,
-  user_two_username: string | undefined
-) {
-  return useQuery(
-    api.results.getResult,
-    user_one_username && user_two_username ? { user_one_username, user_two_username } : 'skip'
-  );
+export function useGetProfile(username: string | undefined) {
+  return useQuery(api.userProfiles.getProfile, username ? { username } : 'skip');
 }
 
-export function useGetResultById(resultId: Id<'results'> | undefined) {
-  return useQuery(api.results.getResultById, resultId ? { resultId } : 'skip');
+export function useGetFreshProfile(username: string | undefined) {
+  return useQuery(api.userProfiles.getFreshProfile, username ? { username } : 'skip');
 }
 
-export function useGetUserResultHistory(username: string | undefined) {
-  return useQuery(api.results.getUserResultHistory, username ? { username } : 'skip');
+export function useGetAllProfilesWithStatus() {
+  return useQuery(api.userProfiles.getAllProfilesWithStatus);
 }
 
-export function useCreateMatchup() {
-  return useMutation(api.matchups.createMatchup);
+// Vibe Match hooks
+export function useUpsertMatch() {
+  return useMutation(api.vibeMatches.upsertMatch);
 }
 
-export function useUpdateMatchupStatus() {
-  return useMutation(api.matchups.updateMatchupStatus);
+export function useGetMatch(user1: string | undefined, user2: string | undefined) {
+  return useQuery(api.vibeMatches.getMatch, user1 && user2 ? { user1, user2 } : 'skip');
 }
 
-export function useGetMatchup(sessionId: string | undefined) {
-  return useQuery(api.matchups.getMatchup, sessionId ? { sessionId } : 'skip');
+export function useGetFreshMatch(user1: string | undefined, user2: string | undefined) {
+  return useQuery(api.vibeMatches.getFreshMatch, user1 && user2 ? { user1, user2 } : 'skip');
 }
 
-export function useGetRecentMatchups(limit?: number) {
-  return useQuery(api.matchups.getRecentMatchups, { limit });
+export function useGetUserMatches(username: string | undefined) {
+  return useQuery(api.vibeMatches.getUserMatches, username ? { username } : 'skip');
+}
+
+export function useGetMatchStats() {
+  return useQuery(api.vibeMatches.getMatchStats);
 }

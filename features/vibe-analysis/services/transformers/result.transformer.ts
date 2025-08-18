@@ -6,6 +6,7 @@
 import { matchingResultSchema } from '../../schemas/profile.schema';
 import type { VibeAnalysisResult, UserProfile } from '../../types';
 import type { MatchingResult } from '../../schemas/profile.schema';
+import { ValidationError, ExternalAPIError } from '@/shared/lib/errors';
 
 /**
  * Transforms and validates vibe analysis results
@@ -121,13 +122,16 @@ export class ResultTransformer {
     const MAX_CONTENT_SIZE = 50000; // 50KB limit
 
     if (content.length > MAX_CONTENT_SIZE) {
-      throw new Error(`Response content too large: ${content.length} bytes`);
+      throw new ValidationError(`Response content too large: ${content.length} bytes`, {
+        field: 'response',
+        value: content.length,
+      });
     }
 
     const parsed = JSON.parse(content);
 
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      throw new Error('Response must be a JSON object');
+      throw new ExternalAPIError('Grok API', 'Response must be a JSON object');
     }
 
     return parsed as Record<string, unknown>;

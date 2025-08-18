@@ -3,10 +3,10 @@
  * Coordinates between API client, transformers, and error handling
  */
 
-import { ERROR_MESSAGES } from '../../config/constants';
+import { ERROR_MESSAGES } from '../../config/grok-config';
 import { PROMPT_MODELS } from '../../config/prompts';
 import type { VibeAnalysisRequest, VibeAnalysisResult, UserProfile } from '../../types';
-import { NotFoundError } from '@/shared/lib/errors';
+import { NotFoundError, ExternalAPIError } from '@/shared/lib/errors';
 import { createChildLogger } from '@/lib/logger';
 import { CircuitBreaker } from '@/lib/circuit-breaker';
 import { trackGrokUsage, createSessionTracker } from '../../lib/usage-tracker';
@@ -17,6 +17,7 @@ import { GrokErrorHandler } from './grok-error-handler';
 import { GrokPromptBuilder } from './grok-prompt-builder';
 import { ProfileTransformer } from '../transformers/profile.transformer';
 import { ResultTransformer } from '../transformers/result.transformer';
+import { ConvexCacheService } from '../cache/convex-cache.service';
 
 const logger = createChildLogger('GrokService');
 
@@ -53,6 +54,7 @@ export class GrokService {
   private readonly promptBuilder: GrokPromptBuilder;
   private readonly profileTransformer: ProfileTransformer;
   private readonly resultTransformer: ResultTransformer;
+  private readonly cacheService: ConvexCacheService;
   private sessionTracker: ReturnType<typeof createSessionTracker> | null = null;
 
   /**
@@ -72,6 +74,7 @@ export class GrokService {
     this.promptBuilder = new GrokPromptBuilder();
     this.profileTransformer = new ProfileTransformer();
     this.resultTransformer = new ResultTransformer();
+    this.cacheService = new ConvexCacheService();
   }
 
   /**
@@ -89,6 +92,17 @@ export class GrokService {
    * @throws {RateLimitError} When rate limited
    */
   async analyzeVibe(request: VibeAnalysisRequest): Promise<VibeAnalysisResult> {
+    // Step 1: Check cache for existing match result
+    const cachedMatch = await this.cacheService.getCachedMatch(request.userOne, request.userTwo);
+
+    if (cachedMatch) {
+      logger.info(
+        { users: [request.userOne, request.userTwo], score: cachedMatch.score },
+        'Returning cached match result'
+      );
+      return cachedMatch;
+    }
+
     // Create session tracker for cost monitoring
     this.sessionTracker = createSessionTracker();
 
@@ -107,16 +121,19 @@ export class GrokService {
           userTwo: request.userTwo,
         });
 
-        // Step 1: Fetch both profiles in parallel
+        // Step 2: Fetch both profiles (with cache checking)
         const [profileOne, profileTwo] = await Promise.all([
-          this.fetchProfile(request.userOne),
-          this.fetchProfile(request.userTwo),
+          this.fetchProfileWithCache(request.userOne),
+          this.fetchProfileWithCache(request.userTwo),
         ]);
 
-        logger.debug({ profileOne, profileTwo }, 'Profiles fetched successfully');
+        logger.debug({ profileOne, profileTwo }, 'Profiles ready for matching');
 
-        // Step 2: Match vibes
+        // Step 3: Match vibes
         const result = await this.matchVibes(profileOne, profileTwo);
+
+        // Step 4: Cache the result
+        await this.cacheService.cacheMatch(result);
 
         // Log completion with session summary
         if (this.sessionTracker) {
@@ -138,6 +155,30 @@ export class GrokService {
     } catch (error) {
       this.errorHandler.handleAnalysisError(error, request.userOne, request.userTwo);
     }
+  }
+
+  /**
+   * Fetch a user profile with cache support
+   * @param username - X username (without @)
+   * @returns User profile data (from cache or API)
+   */
+  private async fetchProfileWithCache(username: string): Promise<UserProfile> {
+    // Check cache first
+    const cachedProfile = await this.cacheService.getCachedProfile(username);
+
+    if (cachedProfile) {
+      logger.info({ username }, 'Using cached profile');
+      return cachedProfile;
+    }
+
+    // Not in cache, fetch from API
+    logger.info({ username }, 'Fetching fresh profile from API');
+    const profile = await this.fetchProfile(username);
+
+    // Cache the fetched profile
+    await this.cacheService.cacheProfile(profile);
+
+    return profile;
   }
 
   /**
@@ -238,7 +279,7 @@ export class GrokService {
       // Extract and parse response
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        throw new Error('Empty response from Grok API');
+        throw new ExternalAPIError('Grok API', 'Empty response from matching operation');
       }
 
       // Transform to result format

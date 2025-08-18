@@ -5,6 +5,7 @@
 
 import { userProfileSchema, userProfileErrorSchema } from '../../schemas/profile.schema';
 import type { UserProfile, UserProfileError } from '../../types';
+import { ValidationError, ExternalAPIError } from '@/shared/lib/errors';
 
 /**
  * Result type for profile parsing
@@ -86,7 +87,10 @@ export class ProfileTransformer {
 
     // Check content size
     if (content.length > MAX_CONTENT_SIZE) {
-      throw new Error(`Response content too large: ${content.length} bytes`);
+      throw new ValidationError(`Response content too large: ${content.length} bytes`, {
+        field: 'response',
+        value: content.length,
+      });
     }
 
     // Parse JSON
@@ -94,7 +98,7 @@ export class ProfileTransformer {
 
     // Validate structure
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      throw new Error('Response must be a JSON object');
+      throw new ExternalAPIError('Grok API', 'Response must be a JSON object');
     }
 
     return parsed as Record<string, unknown>;

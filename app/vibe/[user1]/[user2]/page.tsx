@@ -3,17 +3,7 @@ import { verifyBotId, shouldBlockRequest } from '@/lib/security/botid';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { VibeResultsWrapper } from '@/features/vibe-analysis/components/vibe-results-wrapper';
-import {
-  createMatchupAction,
-  updateMatchupStatusAction,
-  saveVibeResultAction,
-  getExistingResultAction,
-} from '@/lib/actions/convex.actions';
-import {
-  generateSessionId,
-  validateMatchupUsers,
-  mapConvexSchemaToVibeResult,
-} from '@/lib/utils/convex.utils';
+import { ValidationError } from '@/shared/lib/errors';
 
 interface PageProps {
   params: Promise<{
@@ -42,63 +32,24 @@ export default async function VibePage({ params }: PageProps) {
     }
   }
 
-  // Validate usernames
-  try {
-    validateMatchupUsers(user1, user2);
-  } catch {
-    notFound(); // Return 404 for invalid username combinations
-  }
-
   // Clean usernames
-  const cleanUser1 = user1.replace('@', '');
-  const cleanUser2 = user2.replace('@', '');
+  const cleanUser1 = user1.replace('@', '').trim();
+  const cleanUser2 = user2.replace('@', '').trim();
 
-  // Generate session ID for this matchup
-  const sessionId = generateSessionId();
-
-  let result;
-  let matchupId;
-
-  try {
-    // Check if result already exists (optional caching)
-    const existingResult = await getExistingResultAction(cleanUser1, cleanUser2);
-
-    if (existingResult) {
-      // Use existing result if found
-      result = mapConvexSchemaToVibeResult(existingResult);
-    } else {
-      // Create new matchup record with 'analyzing' status
-      matchupId = await createMatchupAction(sessionId, cleanUser1, cleanUser2);
-
-      // Perform vibe analysis
-      result = await analyzeVibeService(cleanUser1, cleanUser2, 'standard');
-
-      // Save analysis results to Convex
-      const resultId = await saveVibeResultAction(result, cleanUser1, cleanUser2);
-
-      // Update matchup status to 'completed'
-      await updateMatchupStatusAction(sessionId, 'completed', resultId);
-    }
-  } catch (error) {
-    console.error('Vibe analysis error:', error);
-
-    // Update matchup status to 'error' if matchup was created
-    if (matchupId) {
-      try {
-        await updateMatchupStatusAction(
-          sessionId,
-          'error',
-          undefined,
-          error instanceof Error ? error.message : 'Analysis failed'
-        );
-      } catch (updateError) {
-        console.error('Failed to update matchup status:', updateError);
-      }
-    }
-
-    // Re-throw the error to be handled by error boundary
-    throw error;
+  // Validate usernames
+  if (!cleanUser1 || !cleanUser2) {
+    notFound();
   }
+
+  if (cleanUser1.toLowerCase() === cleanUser2.toLowerCase()) {
+    throw new ValidationError('Please enter two different usernames', {
+      field: 'usernames',
+      value: { userOne: cleanUser1, userTwo: cleanUser2 },
+    });
+  }
+
+  // Perform vibe analysis (cache is handled internally by the service)
+  const result = await analyzeVibeService(cleanUser1, cleanUser2, 'standard');
 
   return <VibeResultsWrapper result={result} user1={cleanUser1} user2={cleanUser2} />;
 }

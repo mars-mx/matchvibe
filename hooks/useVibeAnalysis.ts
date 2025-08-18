@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useCreateResult, useCreateMatchup, useUpdateMatchupStatus } from './useConvex';
-import type { Id } from '@/convex/_generated/dataModel';
 
 export interface UserData {
   username: string;
@@ -15,89 +13,57 @@ export interface UserData {
   verified?: boolean;
 }
 
+/**
+ * Hook for vibe analysis functionality
+ * Note: Currently using server-side analysis via analyze.service.ts
+ * This hook provides client-side state management if needed
+ */
 export function useVibeAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentMatchup, setCurrentMatchup] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const createResult = useCreateResult();
-  const createMatchup = useCreateMatchup();
-  const updateMatchupStatus = useUpdateMatchupStatus();
+  const analyzeCompatibility = useCallback(async (user1: string, user2: string) => {
+    try {
+      setIsAnalyzing(true);
+      setError(null);
 
-  const analyzeCompatibility = useCallback(
-    async (
-      user_one_username: string,
-      user_two_username: string,
-      compatibilityData: {
-        compatibilityScore: number;
-        sharedInterests: string[];
-        complementaryTraits: string[];
-        potentialConflicts: string[];
-        overallAssessment: string;
+      // Call the API endpoint for analysis
+      const response = await fetch('/api/vibe/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user1, user2 }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Analysis failed: ${response.statusText}`);
       }
-    ) => {
-      try {
-        const resultId = await createResult({
-          user_one_username,
-          user_two_username,
-          ...compatibilityData,
-        });
-        return resultId;
-      } catch (error) {
-        console.error('Error creating result:', error);
-        throw error;
-      }
-    },
-    [createResult]
-  );
 
-  const startAnalysisMatchup = useCallback(
-    async (user_one_username: string, user_two_username?: string) => {
-      try {
-        setIsAnalyzing(true);
-        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      const result = await response.json();
+      setAnalysisResult(result);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Analysis failed';
+      setError(errorMessage);
+      throw error;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
 
-        await createMatchup({
-          sessionId,
-          user_one_username,
-          user_two_username,
-        });
-
-        setCurrentMatchup(sessionId);
-        return sessionId;
-      } catch (error) {
-        console.error('Error starting analysis session:', error);
-        setIsAnalyzing(false);
-        throw error;
-      }
-    },
-    [createMatchup]
-  );
-
-  const completeAnalysisMatchup = useCallback(
-    async (sessionId: string, resultId?: Id<'results'>, errorMessage?: string) => {
-      try {
-        await updateMatchupStatus({
-          sessionId,
-          status: errorMessage ? 'error' : 'completed',
-          resultId,
-          errorMessage,
-        });
-
-        setIsAnalyzing(false);
-        setCurrentMatchup(null);
-      } catch (error) {
-        console.error('Error completing analysis session:', error);
-        throw error;
-      }
-    },
-    [updateMatchupStatus]
-  );
+  const resetAnalysis = useCallback(() => {
+    setAnalysisResult(null);
+    setError(null);
+    setIsAnalyzing(false);
+  }, []);
 
   return {
     isAnalyzing,
-    currentMatchup,
+    analysisResult,
+    error,
     analyzeCompatibility,
-    startAnalysisMatchup,
-    completeAnalysisMatchup,
+    resetAnalysis,
   };
 }

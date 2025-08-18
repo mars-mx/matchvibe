@@ -3,6 +3,8 @@
  * Prevents cascading failures and provides graceful degradation
  */
 
+import { ExternalAPIError } from '@/shared/lib/errors';
+
 export interface CircuitBreakerOptions {
   /** Failure threshold before opening circuit */
   failureThreshold: number;
@@ -55,7 +57,10 @@ export class CircuitBreaker {
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === CircuitState.OPEN) {
       if (Date.now() < this.nextAttempt) {
-        throw new Error('Circuit breaker is OPEN. Service temporarily unavailable.');
+        throw new ExternalAPIError(
+          'Service',
+          'Circuit breaker is OPEN. Service temporarily unavailable.'
+        );
       }
 
       // Move to half-open state

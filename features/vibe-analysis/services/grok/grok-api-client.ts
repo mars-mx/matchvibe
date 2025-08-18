@@ -3,7 +3,7 @@
  * Handles HTTP communication, timeouts, response validation, rate limiting, and retries
  */
 
-import { GROK_CONFIG } from '../../config/constants';
+import { GROK_CONFIG } from '../../config/grok-config';
 import { grokAPIResponseSchema } from '../../schemas';
 import type { GrokAPIResponse } from '../../types';
 import { createChildLogger } from '@/lib/logger';

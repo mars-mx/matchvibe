@@ -2,7 +2,7 @@
  * Utility functions for tracking Grok API usage and calculating costs
  */
 
-import { GROK_PRICING, LIVE_SEARCH_PRICING } from '../config/constants';
+import { GROK_PRICING, LIVE_SEARCH_PRICING } from '../config/grok-config';
 import type { GrokAPIResponse } from '../schemas';
 import type { Logger } from 'pino';
 

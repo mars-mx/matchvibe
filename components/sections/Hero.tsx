@@ -1,4 +1,4 @@
-import { VibeAnalysisForm } from './VibeAnalysisForm';
+import { VibeAnalysisForm } from '@/features/vibe-analysis/components/vibe-analysis-form';
 
 export function Hero() {
   return (

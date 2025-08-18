@@ -2,28 +2,60 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 export default defineSchema({
-  results: defineTable({
-    user_one_username: v.string(),
-    user_two_username: v.string(),
-    compatibilityScore: v.number(),
-    sharedInterests: v.array(v.string()),
-    complementaryTraits: v.array(v.string()),
-    potentialConflicts: v.array(v.string()),
-    overallAssessment: v.string(),
-    createdAt: v.string(),
-  })
-    .index('by_users', ['user_one_username', 'user_two_username'])
-    .index('by_user1', ['user_one_username'])
-    .index('by_user2', ['user_two_username']),
+  userProfiles: defineTable({
+    // Identity
+    username: v.string(), // Unique X username (without @)
+    displayName: v.optional(v.string()),
 
-  matchups: defineTable({
-    sessionId: v.string(),
-    user_one_username: v.string(),
-    user_two_username: v.optional(v.string()),
-    status: v.union(v.literal('analyzing'), v.literal('completed'), v.literal('error')),
-    resultId: v.optional(v.id('results')),
-    errorMessage: v.optional(v.string()),
-    createdAt: v.string(),
-    completedAt: v.optional(v.string()),
-  }).index('by_matchup_id', ['sessionId']),
+    // Content Style
+    primaryContentType: v.optional(v.string()), // 'shitposts', 'serious', 'mixed', 'news', 'personal'
+    humorStyle: v.optional(v.string()), // 'sarcastic', 'wholesome', 'edgy', 'dry', 'none'
+    tone: v.optional(v.string()), // 'positive', 'negative', 'neutral', 'mixed'
+    usesEmojis: v.optional(v.boolean()),
+    formality: v.optional(v.string()), // 'very_formal', 'formal', 'casual', 'very_casual'
+
+    // Rating Scores (0-1 values)
+    shitpostRating: v.optional(v.number()), // 0=never shitposts, 1=constantly shitposts
+    memeRating: v.optional(v.number()), // 0=never uses memes, 1=very frequently
+    qualityRating: v.optional(v.number()), // 0=never quality content, 1=mostly quality
+
+    // Topics & Traits
+    topTopics: v.array(v.string()),
+    notableTraits: v.array(v.string()),
+
+    // Data Quality Metrics
+    searchConfidence: v.number(), // 0-100
+    dataCompleteness: v.number(), // 0-100
+
+    // Timestamp (Unix milliseconds)
+    createdAt: v.number(),
+  })
+    .index('by_username', ['username'])
+    .index('by_created', ['createdAt']),
+
+  vibeMatches: defineTable({
+    // User identifiers (always sorted alphabetically)
+    userOneTag: v.string(),
+    userTwoTag: v.string(),
+
+    // Analysis Results
+    score: v.number(), // 0-100 compatibility score
+    analysis: v.string(),
+    recommendation: v.optional(v.string()),
+    vibeType: v.optional(v.string()), // 'perfect_match', 'complementary', 'growth', 'challenging', 'incompatible'
+
+    // Arrays
+    strengths: v.array(v.string()),
+    challenges: v.array(v.string()),
+    sharedInterests: v.array(v.string()),
+
+    // Metadata
+    modelUsed: v.optional(v.string()),
+    sourcesUsed: v.number(),
+
+    // Timestamp (Unix milliseconds)
+    createdAt: v.number(),
+  })
+    .index('by_users', ['userOneTag', 'userTwoTag'])
+    .index('by_created', ['createdAt']),
 });

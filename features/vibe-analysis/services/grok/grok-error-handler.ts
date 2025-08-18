@@ -10,7 +10,7 @@ import {
   RateLimitError,
   NotFoundError,
 } from '@/shared/lib/errors';
-import { ERROR_MESSAGES } from '../../config/constants';
+import { ERROR_MESSAGES } from '../../config/grok-config';
 import { createChildLogger } from '@/lib/logger';
 
 const logger = createChildLogger('GrokErrorHandler');

@@ -1,5 +1,5 @@
 /**
- * Configuration constants for Grok API integration
+ * Grok API Configuration
  * Using latest Grok-4 model for advanced analysis capabilities
  */
 
@@ -43,15 +43,11 @@ export const GROK_CONFIG = {
   },
 };
 
-export const VIBE_SCORE_RANGES = {
-  perfect: { min: 91, max: 100, label: 'Perfect Vibe Sync' },
-  good: { min: 80, max: 90, label: 'Good Vibes' },
-  decent: { min: 61, max: 79, label: 'Decent Match' },
-  mixed: { min: 41, max: 60, label: 'Mixed Compatibility' },
-  poor: { min: 21, max: 40, label: 'Poor Match' },
-  incompatible: { min: 0, max: 20, label: 'Incompatible Vibes' },
-} as const;
+// Vibe-specific constants moved to vibe-constants.ts for better organization
 
+/**
+ * Grok-specific error messages
+ */
 export const ERROR_MESSAGES = {
   API_KEY_MISSING: 'Grok API key is not configured',
   USER_NOT_FOUND: 'Could not find X user',

@@ -3,9 +3,14 @@ import pino from 'pino';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = process.env.NODE_ENV === 'test';
 
+// Disable pino-pretty in Next.js environment to avoid worker thread issues
+const isNextJs = typeof window === 'undefined' && !process.env.JEST_WORKER_ID;
+const shouldUsePretty = isDevelopment && !isNextJs;
+
 const logger = pino({
   level: process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
-  transport: isDevelopment
+  // Disable transport in Next.js to avoid worker thread issues
+  transport: shouldUsePretty
     ? {
         target: 'pino-pretty',
         options: {

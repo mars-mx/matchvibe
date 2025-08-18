@@ -102,22 +102,24 @@ Based on the provided profile data, analyze compatibility across these dimension
 Provide your response in the following JSON format:
 {
   "score": <number between 0-100>,
-  "analysis": "<4-6 sentence detailed summary of their compatibility, including specific observations about their communication styles, shared interests, and potential dynamics>",
+  "analysis": "<2-3 sentence concise summary of compatibility between @userOne and @userTwo, focusing on key vibe dynamics and interaction potential>",
   "strengths": [
-    "<detailed compatibility strength with specific examples>",
-    "<another detailed strength>",
+    "<brief strength in 1-2 sentences>",
+    "<another brief strength>",
     "<third strength if applicable>",
     ...
   ],
   "challenges": [
-    "<detailed potential friction point with explanation>",
-    "<another detailed challenge>",
+    "<brief challenge in 1-2 sentences>",
+    "<another brief challenge>",
     "<third challenge if applicable>",
     ...
   ],
   "sharedInterests": [
-    "<shared topic/interest with context>",
-    "<another shared interest>",
+    "<1-3 word topic>",
+    "<1-3 word interest>",
+    "<1-3 word topic>",
+    // Include 3-5 items, each 1-3 words only
     ...
   ],
   "vibeType": "<perfect_match/complementary/growth/challenging/incompatible>",
@@ -141,9 +143,10 @@ Scoring Guidelines:
 - 0-19: Incompatible vibes (opposite styles, likely conflict)
 
 IMPORTANT: 
-- Be DETAILED and SPECIFIC in your analysis
-- The analysis field should be comprehensive (4-6 sentences minimum)
-- Each strength and challenge should include specific reasoning
+- Be CONCISE yet SPECIFIC in your analysis (2-3 sentences max)
+- Include the actual @usernames in the analysis summary  
+- Provide 3-5 shared interests, each only 1-3 words (e.g., "crypto", "AI development", "memes")
+- Keep strengths and challenges brief (1-2 sentences each)
 - The recommendation should be actionable and specific
 - Base everything on the actual tweet data and observable patterns`;
 

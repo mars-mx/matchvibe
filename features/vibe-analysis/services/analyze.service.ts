@@ -2,6 +2,7 @@ import { GrokService } from '@/features/vibe-analysis/services/grok/grok.service
 import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/request.schema';
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import { getGrokApiKey } from '@/lib/env';
+import { ValidationError } from '@/shared/lib/errors';
 
 export async function analyzeVibeService(
   userOne: string,
@@ -15,7 +16,10 @@ export async function analyzeVibeService(
 
     // Validate usernames are different
     if (cleanUserOne.toLowerCase() === cleanUserTwo.toLowerCase()) {
-      throw new Error('Please enter two different usernames');
+      throw new ValidationError('Please enter two different usernames', {
+        field: 'usernames',
+        value: { userOne: cleanUserOne, userTwo: cleanUserTwo },
+      });
     }
 
     // Validate request data with schema

@@ -1,10 +1,10 @@
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import {
   COMPATIBILITY_LEVELS,
-  TIME_THRESHOLDS,
   SHARE_CONFIG,
   type CompatibilityLevel,
-} from '@/lib/config/constants';
+} from '../config/vibe-constants';
+import { TIME_THRESHOLDS } from '@/lib/config/constants';
 
 export function getCompatibilityLevel(score: number): {
   level: CompatibilityLevel;

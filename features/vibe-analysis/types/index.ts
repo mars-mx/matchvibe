@@ -67,6 +67,7 @@ export interface VibeAnalysisResult {
     userTwo: string;
     sourcesUsed: number; // Number of X posts analyzed
     timestamp: string;
+    modelUsed?: string; // AI model used for analysis
   };
 }
 

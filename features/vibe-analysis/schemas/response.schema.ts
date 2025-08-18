@@ -18,6 +18,10 @@ export const vibeAnalysisResultSchema = z.object({
 
   sharedInterests: z.array(z.string()).default([]).describe('Common interests'),
 
+  vibeType: z.string().optional().describe('Type of vibe match'),
+
+  recommendation: z.string().optional().describe('Recommendations for interaction'),
+
   metadata: z.object({
     userOne: z.string().min(1, 'User one is required'),
     userTwo: z.string().min(1, 'User two is required'),
@@ -27,6 +31,7 @@ export const vibeAnalysisResultSchema = z.object({
       .datetime()
       .or(z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/))
       .describe('ISO 8601 timestamp'),
+    modelUsed: z.string().optional().describe('AI model used for analysis'),
   }),
 });
 
