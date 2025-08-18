@@ -36,14 +36,14 @@ export function CompatibilityBreakdown({
   return (
     <div className={cn('grid gap-4 md:grid-cols-3', className)}>
       {strengths && strengths.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="liquid-glass-card-subtle">
+          <CardHeader className="relative z-10 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="h-4 w-4 text-green-500" />
               Strengths
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <ul className="space-y-2">
               {strengths.map((strength, index) => (
                 <li key={index} className="flex items-start gap-2">
@@ -57,14 +57,14 @@ export function CompatibilityBreakdown({
       )}
 
       {challenges && challenges.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="liquid-glass-card-subtle">
+          <CardHeader className="relative z-10 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <TrendingDown className="h-4 w-4 text-yellow-500" />
               Challenges
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <ul className="space-y-2">
               {challenges.map((challenge, index) => (
                 <li key={index} className="flex items-start gap-2">
@@ -78,14 +78,14 @@ export function CompatibilityBreakdown({
       )}
 
       {sharedInterests && sharedInterests.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
+        <Card className="liquid-glass-card-subtle">
+          <CardHeader className="relative z-10 pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4 text-blue-500" />
               Shared Interests
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="relative z-10">
             <div className="flex flex-wrap gap-2">
               {sharedInterests.map((interest, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">

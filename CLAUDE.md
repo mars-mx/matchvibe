@@ -70,6 +70,7 @@ npx shadcn@latest add
 - `/components/ui` - shadcn/ui components
 - `/features` - Feature-specific modules (vibe-analysis)
 - `/shared` - Shared utilities and error handling
+- `/middleware.ts` - Edge middleware for rate limiting on /vibe/\* routes
 
 ### Key Configurations
 
@@ -87,7 +88,8 @@ npx shadcn@latest add
 - Use `app/` directory structure
 - Server Components by default, use `"use client"` directive for client components
 - Metadata API for SEO
-- Route handlers in `app/api/` directories
+- **Server Component First Architecture**: Direct service calls in Server Components instead of API routes
+- Server Actions for form submissions with built-in rate limiting
 
 ### Styling Approach
 
@@ -150,40 +152,55 @@ const env = validateEnv(); // Fails fast with clear errors
 - **Clear errors**: Detailed validation messages for debugging
 - **External API protection**: Validate third-party responses before use
 
-### Security Infrastructure
+### Security Architecture (Server Component First)
+
+#### Overview
+
+MatchVibe uses a **Server Component First** architecture with security applied at multiple layers:
+
+1. **Edge Middleware** (`/middleware.ts`): Rate limiting for `/vibe/*` routes
+2. **Server Components**: Bot protection via BotId
+3. **Server Actions**: Rate limiting wrapper for form submissions
 
 #### Rate Limiting
 
-Implemented using Upstash Redis with token bucket algorithm:
+Implemented using Upstash Redis with sliding window algorithm:
 
 - **Default Limits**: 20 requests per 10-minute window
-- **Algorithm**: Token bucket for burst tolerance
+- **Algorithm**: Sliding window for consistent rate limiting
 - **Identification**: IP-based using proxy headers
 - **Local Development**: Disabled by default (no Redis needed)
 - **Production**: Auto-configured via Vercel Marketplace
 
-#### Middleware Execution Order
+**Implementation Locations:**
 
-```typescript
-// Optimal order for performance and security
-export const POST = withRateLimit(
-  // 1. Rate limit (cheap, fast)
-  withBotProtection(
-    // 2. Bot protection (expensive)
-    async (request) => {
-      // 3. Handler logic
-      // API implementation
-    }
-  )
-);
-```
+- **Edge Middleware**: Protects `/vibe/*` routes
+- **Server Actions**: Wrapped with `withServerActionRateLimit`
 
 #### Bot Protection
 
-- Uses BotId library for detection
-- Blocks malicious automated traffic
-- Allows verified bots (Google, Bing, etc.)
-- Configurable blocking messages
+- Uses Vercel BotId for detection
+- Applied in Server Components (production only)
+- Blocks malicious bots while allowing verified crawlers
+- Returns 404 for blocked traffic to avoid revealing protection
+
+#### Security Layers
+
+```typescript
+// 1. Edge Middleware (rate limiting)
+// Applied automatically to /vibe/* routes via middleware.ts
+
+// 2. Server Component (bot protection)
+const botResult = await verifyBotId();
+if (shouldBlockRequest(botResult)) {
+  notFound();
+}
+
+// 3. Server Action (rate limiting)
+export const action = withServerActionRateLimit(actionImpl, {
+  errorMessage: 'Too many requests...',
+});
+```
 
 ### Code Quality & Pre-commit Workflow
 

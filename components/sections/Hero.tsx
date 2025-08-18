@@ -1,24 +1,6 @@
-'use client';
-
-import { useActionState } from 'react';
-import { useBotIdProtection } from '@/components/providers/BotIdProvider';
-import { analyzeVibeAction, type FormState } from '@/features/vibe-analysis/actions/analyze.action';
 import { VibeAnalysisForm } from './VibeAnalysisForm';
-import { VibeAnalysisResults } from './VibeAnalysisResults';
-
-const initialState: FormState = {
-  success: false,
-};
 
 export function Hero() {
-  const { isProtected, shouldDisableAction } = useBotIdProtection('/api/vibe/analyze');
-
-  const [state, formAction, isPending] = useActionState(analyzeVibeAction, initialState);
-
-  const errorMessage =
-    state?.errors?.general?.join(', ') || (!state?.success && state?.message) || null;
-  const result = state?.success && state?.result ? state.result : null;
-
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-12">
       <div className="gradient-bg absolute inset-0" />
@@ -35,20 +17,7 @@ export function Hero() {
         </h1>
 
         {/* Analysis Form */}
-        <VibeAnalysisForm
-          onSubmit={formAction}
-          isPending={isPending}
-          disabled={shouldDisableAction}
-          error={errorMessage}
-        />
-
-        {/* Bot Protection Indicator */}
-        {isProtected && (
-          <div className="mt-2 text-center text-xs text-white/50">Protected by Bot ID</div>
-        )}
-
-        {/* Results Display */}
-        {result && <VibeAnalysisResults result={result} />}
+        <VibeAnalysisForm />
 
         {/* Footer Text */}
         <p className="mx-auto mt-10 max-w-2xl text-lg text-white/70 sm:text-xl">
