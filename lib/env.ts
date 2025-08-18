@@ -15,12 +15,9 @@ let validationError: Error | null = null;
  * @returns True if currently building
  */
 function isBuildTime(): boolean {
-  // Check multiple indicators of build time
-  return (
-    process.env.NEXT_PHASE === 'phase-production-build' ||
-    process.env.CI === 'true' ||
-    (typeof window === 'undefined' && !process.env.RUNTIME_ENV_VALIDATION)
-  );
+  // Only return true during actual Next.js build phase
+  // NEXT_PHASE is only set during build, not at runtime
+  return process.env.NEXT_PHASE === 'phase-production-build';
 }
 
 /**
