@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { BotIdProvider } from '@/components/providers/BotIdProvider';
 import { SpeedInsightsProvider } from '@/components/providers/SpeedInsightsProvider';
 import { ConvexClientProvider } from '@/components/ConvexClientProvider';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
@@ -31,13 +32,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ConvexClientProvider>
-          <SpeedInsightsProvider>
-            <BotIdProvider>
-              {children}
-              <Toaster />
-              <Analytics />
-            </BotIdProvider>
-          </SpeedInsightsProvider>
+          <QueryProvider>
+            <SpeedInsightsProvider>
+              <BotIdProvider>
+                {children}
+                <Toaster />
+                <Analytics />
+              </BotIdProvider>
+            </SpeedInsightsProvider>
+          </QueryProvider>
         </ConvexClientProvider>
       </body>
     </html>
