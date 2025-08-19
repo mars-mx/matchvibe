@@ -10,8 +10,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-            gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes (formerly cacheTime)
+            staleTime: Infinity, // Vibe analysis data never changes
+            gcTime: 60 * 60 * 1000, // Keep in cache for 1 hour after becoming inactive
             retry: 1, // Retry failed requests once
             refetchOnWindowFocus: false, // Don't refetch on window focus for vibe analysis
           },
