@@ -4,7 +4,7 @@
  * 2. MATCH_VIBE - Uses Grok-4 to analyze compatibility
  */
 
-import { getGrokMaxTokens } from '@/lib/env';
+import { getGrokMaxTokens, getGrokModelVersion } from '@/lib/env';
 
 /**
  * FETCH_PROFILE Prompt - Uses Grok-3-mini for efficient data extraction
@@ -43,9 +43,136 @@ Return ONLY this JSON structure. Use null for any data you cannot observe from s
     "tone": "<positive/negative/neutral/mixed>" or null,
     "usesEmojis": <true/false based on actual tweets, otherwise null>,
     "formality": "<very_formal/formal/casual/very_casual>" or null,
-    "shitpostRating": <0-1 value indicating how much the user likes shitposting, 0=never, 1=constantly> or null,
-    "memeRating": <0-1 value indicating how much the user uses memes, 0=never, 1=very frequently> or null,
-    "qualityRating": <0-1 value indicating how much the user posts informative/quality content, 0=never, 1=mostly> or null
+    
+    // 15 Personality Dimensions - Analyze tweets to score each 0-1 with PRECISE DIFFERENTIATION
+    // CRITICAL: Score based on ACTUAL tweet content, not assumptions. Look for specific indicators.
+    
+    // Emotional & Mood
+    "positivityRating": <0-1 scoring guide:
+      0.0-0.2: Consistently negative, complains frequently, doom-posting, criticism without solutions
+      0.3-0.4: More negative than positive, occasional bright moments, skeptical outlook
+      0.5-0.6: Balanced emotional tone, realistic perspective, neither overly positive nor negative
+      0.7-0.8: Generally upbeat, celebrates others' wins, constructive when critical
+      0.9-1.0: Relentlessly positive, inspirational content, always finding silver linings
+    > or null,
+    
+    "empathyRating": <0-1 scoring guide:
+      0.0-0.2: Never responds to others' problems, all tweets about self, ignores community
+      0.3-0.4: Occasionally acknowledges others, mostly self-focused content
+      0.5-0.6: Balanced between personal content and supporting others
+      0.7-0.8: Frequently offers support, validates others' feelings, community-minded
+      0.9-1.0: Constant emotional support, therapist energy, puts others first always
+    > or null,
+    
+    // Interaction Style
+    "engagementRating": <0-1 scoring guide:
+      0.0-0.2: Never replies, pure broadcast mode, no conversations visible
+      0.3-0.4: Rare replies, mostly original posts, minimal interaction
+      0.5-0.6: Mix of posts and replies, selective engagement
+      0.7-0.8: Frequent replier, active in threads, initiates conversations
+      0.9-1.0: Reply guy energy, always in conversations, more replies than posts
+    > or null,
+    
+    "debateRating": <0-1 scoring guide:
+      0.0-0.2: Avoids all conflict, never disagrees publicly, blocks/mutes liberally
+      0.3-0.4: Rarely engages in debates, prefers harmony
+      0.5-0.6: Will debate when necessary, picks battles carefully
+      0.7-0.8: Enjoys intellectual sparring, frequently challenges ideas
+      0.9-1.0: Debate lord, always arguing, seeks confrontation
+    > or null,
+    
+    // Content Style
+    "shitpostRating": <0-1 scoring guide:
+      0.0-0.2: Never shitposts, all serious content, professional tone
+      0.3-0.4: Rare shitposts, mostly serious with occasional chaos
+      0.5-0.6: Balanced mix of serious and unhinged content
+      0.7-0.8: Frequent shitposting, embraces chaos, irony-poisoned
+      0.9-1.0: Pure shitpost account, incomprehensible posts, maximum chaos
+    > or null,
+    
+    "memeRating": <0-1 scoring guide:
+      0.0-0.2: Never posts memes, text-only content, doesn't understand references
+      0.3-0.4: Occasional mainstream meme, behind on trends
+      0.5-0.6: Regular meme usage, understands current formats
+      0.7-0.8: Heavy meme user, creates original memes, deep cut references
+      0.9-1.0: Meme lord, speaks primarily in memes, cutting edge of meme culture
+    > or null,
+    
+    "intellectualRating": <0-1 scoring guide:
+      0.0-0.2: Surface-level takes only, no analysis, reactive content
+      0.3-0.4: Some depth occasionally, mostly quick thoughts
+      0.5-0.6: Mix of quick takes and thoughtful analysis
+      0.7-0.8: Frequently posts deep analysis, cites sources, nuanced takes
+      0.9-1.0: Academic level discourse, essays in tweets, profound insights
+    > or null,
+    
+    // Topic Focus
+    "politicalRating": <0-1 scoring guide:
+      0.0-0.2: Never mentions politics, actively avoids political topics
+      0.3-0.4: Rare political mentions, mostly apolitical
+      0.5-0.6: Occasional political commentary, not primary focus
+      0.7-0.8: Frequently political, clear ideological stance
+      0.9-1.0: Politics dominates timeline, activist energy, every issue politicized
+    > or null,
+    
+    "personalSharingRating": <0-1 scoring guide:
+      0.0-0.2: Never shares personal info, purely topical/professional
+      0.3-0.4: Rare personal glimpses, maintains boundaries
+      0.5-0.6: Balanced personal/topical content
+      0.7-0.8: Frequently shares life updates, open about struggles/wins
+      0.9-1.0: Oversharer, diary-style posting, no filter on personal life
+    > or null,
+    
+    "inspirationalQuotesRating": <0-1 scoring guide:
+      0.0-0.2: Never posts quotes or motivation, finds them cringe
+      0.3-0.4: Very rare inspirational content
+      0.5-0.6: Occasional motivational posts, not excessive
+      0.7-0.8: Regular inspiration/quotes, life coach energy
+      0.9-1.0: Daily affirmations, constant motivation, LinkedIn influencer vibes
+    > or null,
+    
+    // Social Energy
+    "extroversionRating": <0-1 scoring guide:
+      0.0-0.2: Hermit energy, minimal social interaction, prefers solitude
+      0.3-0.4: Selective social energy, small circle preference
+      0.5-0.6: Balanced social approach, comfortable alone or in groups
+      0.7-0.8: High social energy, seeks interaction, party mentions
+      0.9-1.0: Maximum extrovert, always with people, FOMO if alone
+    > or null,
+    
+    "authenticityRating": <0-1 scoring guide:
+      0.0-0.2: Highly curated, performative, brand-like presence
+      0.3-0.4: Mostly polished, rare authentic moments
+      0.5-0.6: Mix of curated and raw content
+      0.7-0.8: Mostly authentic, shares failures and struggles
+      0.9-1.0: Completely unfiltered, raw thoughts, typos included
+    > or null,
+    
+    // Values
+    "optimismRating": <0-1 scoring guide:
+      0.0-0.2: Doomer, blackpilled, expects worst outcomes
+      0.3-0.4: Pessimistic lean, skeptical of positive change
+      0.5-0.6: Realistic, neither pessimist nor optimist
+      0.7-0.8: Generally optimistic, believes in positive outcomes
+      0.9-1.0: Toxic positivity, everything happens for a reason type
+    > or null,
+    
+    // Communication
+    "humorRating": <0-1 scoring guide:
+      0.0-0.2: Never jokes, serious tone only, humor-impaired
+      0.3-0.4: Rare attempts at humor, mostly serious
+      0.5-0.6: Balanced humor and serious content
+      0.7-0.8: Frequently funny, good comedic timing, witty
+      0.9-1.0: Comedy account vibes, everything is a bit, never serious
+    > or null,
+    
+    "aiGeneratedRating": <0-1 scoring guide:
+      0.0-0.2: Clearly human - typos, emotion, personal anecdotes, inconsistent
+      0.3-0.4: Mostly human with occasional sus formatting
+      0.5-0.6: Hard to tell, could go either way
+      0.7-0.8: Suspiciously well-formatted, generic phrases, too perfect
+      0.9-1.0: Obviously AI - repetitive structure, hedging language, no personality
+    > or null
   },
   
   "topTopics": ["<topic1>", "<topic2>", ...] or null,
@@ -67,63 +194,56 @@ Return ONLY this JSON structure. Use null for any data you cannot observe from s
 REMEMBER: Base everything on ACTUAL search results. Include real tweet samples. Never hallucinate engagement metrics you cannot observe.`;
 
 /**
- * MATCH_VIBE Prompt - Uses Grok-4 for sophisticated compatibility analysis
+ * MATCH_VIBE Prompt - Analyzes personality dimensions WITHOUT calculating final score
  */
-export const MATCH_VIBE_PROMPT = `You are an expert in social media personality compatibility analysis. You will receive profile data for two X (Twitter) users and must analyze their vibe compatibility.
+export const MATCH_VIBE_PROMPT = `You are an expert in social media personality compatibility analysis. You will receive profile data for two X (Twitter) users with 15 personality dimensions scored 0-1.
 
-Based on the provided profile data, analyze compatibility across these dimensions:
+Analyze the compatibility between these users by comparing their personality dimensions. DO NOT calculate an overall score - just analyze the dimensions.
 
-1. **Content Style Match**
-   - Do their content types align? (shitposters with shitposters, serious with serious)
-   - Is their humor compatible?
-   - Do their tones complement each other?
-
-2. **Content Preference Alignment** 
-   - Compare their shitpostRating values - similar ratings indicate compatible humor preferences
-   - Compare their memeRating values - both high means shared meme culture, mismatch may cause disconnect
-   - Compare their qualityRating values - both high means intellectual connection, mismatch may indicate different priorities
-   - Consider if complementary differences work (e.g., one quality poster + one entertainer can balance)
-
-3. **Communication Style**
-   - Does their formality match?
-   - Do they use emojis similarly?
-   - Are their communication styles compatible?
-
-4. **Interest Alignment**
-   - Do they share common topics?
-   - Are their interests complementary?
-   - Would they have things to discuss?
-
-5. **Vibe Compatibility**
-   - Based on their actual tweets, would they understand each other?
-   - Do their notable traits suggest compatibility?
-   - Would their content resonate with each other?
+For each dimension pair, consider:
+- Similar scores (within 0.2) often indicate compatibility
+- Large differences (>0.5) may cause friction OR be complementary
+- Some dimensions benefit from similarity (humor, intellectual level)
+- Others can be complementary (one high extroversion + one low can balance)
 
 Provide your response in the following JSON format:
 {
-  "score": <number between 0-100>,
-  "analysis": "<2-3 sentence concise summary of compatibility between @userOne and @userTwo, focusing on key vibe dynamics and interaction potential>",
+  "dimensionAnalysis": {
+    // For each dimension, provide compatibility insight
+    "positivity": "<how their positivityRating values align or clash>",
+    "empathy": "<how their empathyRating values work together>",
+    "engagement": "<how their engagementRating values complement>",
+    "debate": "<how their debateRating values interact>",
+    "shitposting": "<how their shitpostRating values match>",
+    "memes": "<how their memeRating values align>",
+    "intellectual": "<how their intellectualRating values compare>",
+    "political": "<how their politicalRating values affect compatibility>",
+    "personalSharing": "<how their personalSharingRating values work>",
+    "inspirationalQuotes": "<how their inspirationalQuotesRating values align>",
+    "extroversion": "<how their extroversionRating values balance>",
+    "authenticity": "<how their authenticityRating values match>",
+    "optimism": "<how their optimismRating values complement>",
+    "humor": "<how their humorRating values align>",
+    "aiGenerated": "<how their aiGeneratedRating values matter>"
+  },
+  "analysis": "<2-3 sentence concise summary of compatibility between @userOne and @userTwo, focusing on key personality dynamics>",
   "strengths": [
-    "<brief strength in 1-2 sentences>",
-    "<another brief strength>",
-    "<third strength if applicable>",
-    ...
+    "<dimension-based strength>",
+    "<another dimension-based strength>",
+    "<third strength if applicable>"
   ],
   "challenges": [
-    "<brief challenge in 1-2 sentences>",
-    "<another brief challenge>",
-    "<third challenge if applicable>",
-    ...
+    "<dimension-based challenge>",
+    "<another dimension-based challenge>",
+    "<third challenge if applicable>"
   ],
   "sharedInterests": [
     "<1-3 word topic>",
     "<1-3 word interest>",
-    "<1-3 word topic>",
-    // Include 3-5 items, each 1-3 words only
-    ...
+    "<1-3 word topic>"
   ],
   "vibeType": "<perfect_match/complementary/growth/challenging/incompatible>",
-  "recommendation": "<2-3 sentence specific advice for how they could best interact, what topics to focus on, and what to be mindful of>",
+  "recommendation": "<2-3 sentence specific advice based on their dimension patterns>",
   "metadata": {
     "userOne": "<first username>",
     "userTwo": "<second username>",
@@ -132,23 +252,12 @@ Provide your response in the following JSON format:
   }
 }
 
-Scoring Guidelines:
-- 91-100: Perfect vibe sync (rare, nearly identical styles)
-- 80-90: Excellent match (strong alignment, minor differences)
-- 70-79: Good compatibility (solid match with some variety)
-- 60-69: Decent match (more similarities than differences)
-- 50-59: Mixed compatibility (equal strengths and challenges)
-- 40-49: Challenging match (notable differences, some common ground)
-- 20-39: Poor compatibility (fundamental mismatches)
-- 0-19: Incompatible vibes (opposite styles, likely conflict)
-
 IMPORTANT: 
-- Be CONCISE yet SPECIFIC in your analysis (2-3 sentences max)
-- Include the actual @usernames in the analysis summary  
-- Provide 3-5 shared interests, each only 1-3 words (e.g., "crypto", "AI development", "memes")
-- Keep strengths and challenges brief (1-2 sentences each)
-- The recommendation should be actionable and specific
-- Base everything on the actual tweet data and observable patterns`;
+- DO NOT calculate or provide a numerical score
+- Focus on how the 15 personality dimensions interact
+- Be specific about which dimensions align well vs clash
+- The vibeType should reflect the overall dimension pattern
+- Base everything on the actual personality ratings provided`;
 
 /**
  * Instructions for each prompt stage
@@ -178,7 +287,7 @@ export const PROMPT_INSTRUCTIONS = {
  */
 export const PROMPT_MODELS = {
   fetchProfile: {
-    model: 'grok-3-mini',
+    model: getGrokModelVersion() || 'grok-3-mini',
     temperature: 0.1, // Low temperature for factual extraction
     maxTokens: getGrokMaxTokens(), // Use configured max tokens
     searchParameters: {
@@ -187,7 +296,7 @@ export const PROMPT_MODELS = {
     },
   },
   matchVibe: {
-    model: 'grok-3-mini',
+    model: getGrokModelVersion() || 'grok-3-mini',
     temperature: 0.7, // Balanced for creative analysis
     maxTokens: getGrokMaxTokens(), // Use configured max tokens
     // No search needed - works from provided data

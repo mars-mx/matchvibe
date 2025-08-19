@@ -101,6 +101,9 @@ function createBuildTimeEnv(): Env {
     GROK_RETRY_RANDOMIZE: true,
     GROK_RESPECT_RETRY_AFTER: true,
     GROK_RETRY_AFTER_MAX_MS: 120000,
+
+    // Vibe scoring defaults
+    VIBE_AMPLIFICATION_POWER: 2.5,
   } as Env;
 }
 
@@ -226,4 +229,12 @@ export function isRateLimitEnabled(): boolean {
 
   const environment = getEnv();
   return environment.RATE_LIMIT_ENABLED && !!getRedisConfig();
+}
+
+/**
+ * Get vibe amplification power for score calculation
+ * @returns Amplification power (1-5, default 2.5)
+ */
+export function getVibeAmplificationPower(): number {
+  return getEnv().VIBE_AMPLIFICATION_POWER;
 }

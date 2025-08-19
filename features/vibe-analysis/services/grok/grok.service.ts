@@ -96,11 +96,26 @@ export class GrokService {
     const cachedMatch = await this.cacheService.getCachedMatch(request.userOne, request.userTwo);
 
     if (cachedMatch) {
+      // Fetch profiles - either from cache or fresh if not cached
+      const [profileOne, profileTwo] = await Promise.all([
+        this.fetchProfileWithCache(request.userOne),
+        this.fetchProfileWithCache(request.userTwo),
+      ]);
+
+      // Add profiles to cached match result
+      const resultWithProfiles: VibeAnalysisResult = {
+        ...cachedMatch,
+        profiles: {
+          user1: profileOne,
+          user2: profileTwo,
+        },
+      };
+
       logger.info(
         { users: [request.userOne, request.userTwo], score: cachedMatch.score },
-        'Returning cached match result'
+        'Returning cached match result with profiles'
       );
-      return cachedMatch;
+      return resultWithProfiles;
     }
 
     // Create session tracker for cost monitoring
@@ -132,7 +147,16 @@ export class GrokService {
         // Step 3: Match vibes
         const result = await this.matchVibes(profileOne, profileTwo);
 
-        // Step 4: Cache the result
+        // Add profiles to the result
+        const resultWithProfiles: VibeAnalysisResult = {
+          ...result,
+          profiles: {
+            user1: profileOne,
+            user2: profileTwo,
+          },
+        };
+
+        // Step 4: Cache the result (without profiles to avoid duplication)
         await this.cacheService.cacheMatch(result);
 
         // Log completion with session summary
@@ -150,7 +174,7 @@ export class GrokService {
           this.sessionTracker = null;
         }
 
-        return result;
+        return resultWithProfiles;
       });
     } catch (error) {
       this.errorHandler.handleAnalysisError(error, request.userOne, request.userTwo);

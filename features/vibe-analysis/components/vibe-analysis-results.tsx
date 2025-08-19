@@ -1,6 +1,7 @@
 'use client';
 
 import { VibeScore } from '@/features/vibe-analysis/components/vibe-score';
+import { MetricsSection } from '@/features/vibe-analysis/components/metrics-section';
 import { ShareResults } from '@/features/vibe-analysis/components/share-results';
 import { LinkedText } from '@/components/ui/linked-text';
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
@@ -24,9 +25,18 @@ export function VibeAnalysisResults({ result, className }: VibeAnalysisResultsPr
         className
       )}
     >
-      {/* Score Card */}
+      {/* Score Card with Metrics */}
       <div className="rounded-lg border border-white/20 bg-white/10 p-6 backdrop-blur-sm">
-        <VibeScore score={result.score} size="lg" className="vibe-score-hero" />
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch">
+          <div className="flex flex-col justify-center">
+            <VibeScore score={result.score} size="lg" className="vibe-score-hero" />
+          </div>
+          {result.profiles && (
+            <div className="flex flex-col justify-center">
+              <MetricsSection profiles={result.profiles} showAnimation={true} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Analysis Summary */}

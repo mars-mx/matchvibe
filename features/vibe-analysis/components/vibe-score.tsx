@@ -128,12 +128,6 @@ export function VibeScore({ score, showAnimation = true, size = 'md', className 
           compatibility.level === 'low' && 'bg-red-500'
         )}
       />
-
-      {size !== 'sm' && (
-        <p className={cn('text-muted-foreground', classes.label)}>
-          Based on {Math.floor(displayScore / 10 + 5)} shared interests and personality traits
-        </p>
-      )}
     </div>
   );
 }

@@ -57,11 +57,19 @@ export function ShareResults({ result, className, variant = 'default' }: ShareRe
   if (variant === 'compact') {
     return (
       <div className={cn('flex gap-2', className)}>
-        <Button size="sm" variant="outline" onClick={handleShareTwitter} className="gap-2">
+        <Button
+          size="sm"
+          onClick={handleShareTwitter}
+          className="gap-2 border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/20"
+        >
           <Twitter className="h-3 w-3" />
           Tweet
         </Button>
-        <Button size="sm" variant="outline" onClick={handleCopyLink} className="gap-2">
+        <Button
+          size="sm"
+          onClick={handleCopyLink}
+          className="gap-2 border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/20"
+        >
           {copied ? (
             <>
               <Check className="h-3 w-3" />
@@ -74,7 +82,11 @@ export function ShareResults({ result, className, variant = 'default' }: ShareRe
             </>
           )}
         </Button>
-        <Button size="sm" variant="outline" onClick={handleNativeShare} className="gap-2">
+        <Button
+          size="sm"
+          onClick={handleNativeShare}
+          className="gap-2 border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/20"
+        >
           <Share2 className="h-3 w-3" />
           Share
         </Button>

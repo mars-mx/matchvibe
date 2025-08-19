@@ -3,54 +3,15 @@
  * Focused on comparing two X users
  */
 
+// Import types from Zod schemas (single source of truth)
+import type { UserProfile } from '../schemas/profile.schema';
+export type { UserProfile, UserProfileError, MatchingResult } from '../schemas/profile.schema';
+
 // Request type - requires two users
 export interface VibeAnalysisRequest {
   userOne: string;
   userTwo: string;
   analysisDepth?: 'quick' | 'standard' | 'deep';
-}
-
-// User Profile type - fetched from X via Grok
-export interface UserProfile {
-  username: string;
-  displayName: string | null;
-
-  recentTweets: Array<{
-    text: string;
-    isReply?: boolean;
-    hasMedia?: boolean;
-  }> | null;
-
-  contentStyle: {
-    primaryContentType: 'shitposts' | 'serious' | 'mixed' | 'news' | 'personal' | null;
-    humorStyle: 'sarcastic' | 'wholesome' | 'edgy' | 'dry' | 'none' | null;
-    tone: 'positive' | 'negative' | 'neutral' | 'mixed' | null;
-    usesEmojis: boolean | null;
-    formality: 'very_formal' | 'formal' | 'casual' | 'very_casual' | null;
-    shitpostRating: number | null;
-    memeRating: number | null;
-    qualityRating: number | null;
-  };
-
-  topTopics: string[] | null;
-  notableTraits: string[] | null;
-
-  searchConfidence: number;
-  dataCompleteness: number;
-
-  // Optional citations from Grok search
-  citations?: Array<{
-    id?: number;
-    source?: string;
-    url?: string;
-    text?: string;
-  }> | null;
-}
-
-// Profile fetch error type
-export interface UserProfileError {
-  error: string;
-  username: string;
 }
 
 // Result type - compatibility analysis only
@@ -62,12 +23,20 @@ export interface VibeAnalysisResult {
   sharedInterests: string[]; // Common interests
   vibeType?: 'perfect_match' | 'complementary' | 'growth' | 'challenging' | 'incompatible'; // Optional vibe category
   recommendation?: string; // Optional interaction advice
+  profiles?: {
+    user1: UserProfile;
+    user2: UserProfile;
+  };
   metadata: {
     userOne: string;
     userTwo: string;
     sourcesUsed: number; // Number of X posts analyzed
     timestamp: string;
     modelUsed?: string; // AI model used for analysis
+    dimensionBreakdown?: any; // Detailed dimension analysis
+    categoryScores?: Record<string, number>; // Category scores
+    topMatches?: string[]; // Top matching dimensions
+    topClashes?: string[]; // Top clashing dimensions
   };
 }
 

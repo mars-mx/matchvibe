@@ -7,6 +7,7 @@ import { matchingResultSchema } from '../../schemas/profile.schema';
 import type { VibeAnalysisResult, UserProfile } from '../../types';
 import type { MatchingResult } from '../../schemas/profile.schema';
 import { ValidationError, ExternalAPIError } from '@/shared/lib/errors';
+import { compatibilityCalculator } from '../../lib/compatibility-calculator';
 
 /**
  * Transforms and validates vibe analysis results
@@ -35,8 +36,17 @@ export class ResultTransformer {
     profileOne: UserProfile,
     profileTwo: UserProfile
   ): VibeAnalysisResult {
+    // Calculate compatibility score from personality dimensions
+    const { score, breakdown, categoryScores } = compatibilityCalculator.calculateScore(
+      profileOne,
+      profileTwo
+    );
+
+    // Get top matches and clashes for additional context
+    const { topMatches, topClashes } = compatibilityCalculator.getTopMatches(breakdown, 3);
+
     return {
-      score: matchingResult.score,
+      score,
       analysis: matchingResult.analysis,
       strengths: matchingResult.strengths,
       challenges: matchingResult.challenges,
@@ -48,6 +58,10 @@ export class ResultTransformer {
         userTwo: profileTwo.username,
         sourcesUsed: this.calculateSourcesUsed(profileOne, profileTwo),
         timestamp: matchingResult.metadata.timestamp,
+        dimensionBreakdown: breakdown,
+        categoryScores,
+        topMatches: topMatches.map((d) => d.dimension),
+        topClashes: topClashes.map((d) => d.dimension),
       },
     };
   }

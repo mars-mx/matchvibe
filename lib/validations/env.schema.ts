@@ -165,6 +165,14 @@ const envSchema = z
       .pipe(z.number().positive().int())
       .default(120000)
       .describe('Maximum delay from Retry-After headers (2 minutes)'),
+
+    // Vibe Scoring Configuration
+    VIBE_AMPLIFICATION_POWER: z
+      .string()
+      .transform((val) => parseFloat(val))
+      .pipe(z.number().positive().min(1).max(5))
+      .default(2.5)
+      .describe('Score amplification power (1=none, 2.5=strong, 3.5=extreme)'),
   })
   .refine(
     (data) => {

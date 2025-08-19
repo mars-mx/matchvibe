@@ -23,9 +23,36 @@ export const userProfileSchema = z.object({
     tone: z.enum(['positive', 'negative', 'neutral', 'mixed']).nullable(),
     usesEmojis: z.boolean().nullable(),
     formality: z.enum(['very_formal', 'formal', 'casual', 'very_casual']).nullable(),
+
+    // 15 Personality Dimensions (0-1 scale)
+    // Emotional & Mood
+    positivityRating: z.number().min(0).max(1).nullable(),
+    empathyRating: z.number().min(0).max(1).nullable(),
+
+    // Interaction Style
+    engagementRating: z.number().min(0).max(1).nullable(),
+    debateRating: z.number().min(0).max(1).nullable(),
+
+    // Content Style
     shitpostRating: z.number().min(0).max(1).nullable(),
     memeRating: z.number().min(0).max(1).nullable(),
-    qualityRating: z.number().min(0).max(1).nullable(),
+    intellectualRating: z.number().min(0).max(1).nullable(), // renamed from qualityRating
+
+    // Topic Focus
+    politicalRating: z.number().min(0).max(1).nullable(),
+    personalSharingRating: z.number().min(0).max(1).nullable(),
+    inspirationalQuotesRating: z.number().min(0).max(1).nullable(),
+
+    // Social Energy
+    extroversionRating: z.number().min(0).max(1).nullable(),
+    authenticityRating: z.number().min(0).max(1).nullable(),
+
+    // Values
+    optimismRating: z.number().min(0).max(1).nullable(),
+
+    // Communication
+    humorRating: z.number().min(0).max(1).nullable(),
+    aiGeneratedRating: z.number().min(0).max(1).nullable(),
   }),
 
   topTopics: z.array(z.string()).nullable(),
@@ -102,10 +129,10 @@ export const userProfileErrorSchema = z.object({
 });
 
 /**
- * Schema for the matching result (enhanced from vibe analysis)
+ * Schema for the matching result (without score - calculated separately)
  */
 export const matchingResultSchema = z.object({
-  score: z.number().min(0).max(100),
+  dimensionAnalysis: z.record(z.string(), z.string()).optional(), // Analysis for each dimension
   analysis: z.string().min(1),
   strengths: z.array(z.string()).default([]),
   challenges: z.array(z.string()).default([]),
