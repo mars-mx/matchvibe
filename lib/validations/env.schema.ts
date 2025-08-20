@@ -186,19 +186,6 @@ const envSchema = z
       message: 'UPSTASH_REDIS_REST_TOKEN is required when UPSTASH_REDIS_REST_URL is provided',
       path: ['UPSTASH_REDIS_REST_TOKEN'],
     }
-  )
-  .refine(
-    (data) => {
-      // If rate limiting is enabled in production, Redis config must be provided
-      if (data.RATE_LIMIT_ENABLED && data.NODE_ENV === 'production') {
-        return !!(data.UPSTASH_REDIS_REST_URL && data.UPSTASH_REDIS_REST_TOKEN);
-      }
-      return true;
-    },
-    {
-      message: 'Redis configuration is required for rate limiting in production',
-      path: ['UPSTASH_REDIS_REST_URL'],
-    }
   );
 
 export type Env = z.infer<typeof envSchema>;
