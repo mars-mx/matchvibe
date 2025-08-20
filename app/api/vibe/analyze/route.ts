@@ -4,6 +4,8 @@ import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/requ
 import { ValidationError } from '@/shared/lib/errors/specific.errors';
 import { z } from 'zod';
 
+export const runtime = 'nodejs'; // Explicitly set runtime
+
 export async function POST(request: NextRequest) {
   try {
     // Parse request body

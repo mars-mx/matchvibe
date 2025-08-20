@@ -378,3 +378,24 @@ npm run test:grok
 # Or directly with TypeScript
 npx tsx scripts/test-grok-service.ts
 ```
+
+## Web Scraping Instructions
+
+When you need to fetch content from a website and WebFetch fails or is unable to access it (like Reddit, Twitter, or other restricted sites), use the Firecrawl MCP tool instead:
+
+```typescript
+// If WebFetch fails with "unable to fetch from domain.com"
+// Use Firecrawl instead:
+mcp__firecrawl__firecrawl_scrape({
+  url: 'https://example.com/page',
+  formats: ['markdown'],
+});
+```
+
+Firecrawl is more powerful and can access most websites that WebFetch cannot, including:
+
+- Reddit posts and comments
+- Twitter/X content
+- Paywalled or restricted content
+- JavaScript-heavy sites
+- Sites with anti-bot protection
