@@ -4,7 +4,7 @@ import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/requ
 import { ValidationError } from '@/shared/lib/errors/specific.errors';
 import { z } from 'zod';
 
-export const runtime = 'nodejs'; // Explicitly set runtime
+// Remove explicit runtime setting - let Vercel auto-detect
 export const maxDuration = 60; // 60 seconds - works on Vercel Hobby plan
 
 export async function POST(request: NextRequest) {
