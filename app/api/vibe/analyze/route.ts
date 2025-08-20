@@ -5,6 +5,7 @@ import { ValidationError } from '@/shared/lib/errors/specific.errors';
 import { z } from 'zod';
 
 export const runtime = 'nodejs'; // Explicitly set runtime
+export const maxDuration = 60; // 60 seconds - works on Vercel Hobby plan
 
 export async function POST(request: NextRequest) {
   try {

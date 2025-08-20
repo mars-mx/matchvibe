@@ -38,6 +38,10 @@ export async function fetchVibeAnalysis(
   const cleanUser1 = user1.replace('@', '').trim();
   const cleanUser2 = user2.replace('@', '').trim();
 
+  // Add timeout handling
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 seconds client timeout (5 seconds before server timeout)
+
   try {
     const response = await fetch('/api/vibe/analyze', {
       method: 'POST',
@@ -49,7 +53,10 @@ export async function fetchVibeAnalysis(
         userTwo: cleanUser2,
         analysisDepth,
       }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     const data = await response.json();
 
@@ -63,9 +70,21 @@ export async function fetchVibeAnalysis(
 
     return data as VibeAnalysisResult;
   } catch (error) {
+    // Clear timeout on error
+    clearTimeout(timeoutId);
+
     // Re-throw VibeAPIError
     if (error instanceof VibeAPIError) {
       throw error;
+    }
+
+    // Check for timeout/abort error
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new VibeAPIError(
+        'Request timed out. The analysis is taking longer than expected. Please try again with simpler usernames or try again later.',
+        408, // Request Timeout status code
+        { timeout: true, duration: 55000 }
+      );
     }
 
     // Network or other errors - provide more context

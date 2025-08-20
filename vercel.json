@@ -5,5 +5,10 @@
       "master": true,
       "development": true
     }
+  },
+  "functions": {
+    "app/api/vibe/analyze/route.ts": {
+      "maxDuration": 60
+    }
   }
 }

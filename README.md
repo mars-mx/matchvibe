@@ -118,6 +118,19 @@ Deploy to Vercel with one click:
    - Create a Redis database (free tier: 10,000 requests/day)
    - Environment variables are auto-configured!
 
+### ⚠️ Important: Vercel Plan Requirements
+
+The vibe analysis uses AI models that may take 30-60 seconds to complete. Due to Vercel's function timeout limits:
+
+- **Hobby Plan (Free)**: Limited to 10 seconds function execution - analysis may timeout for complex requests
+- **Pro Plan**: Supports up to 60 seconds function execution - recommended for production use
+
+The app is configured to work within a 60-second timeout window. If you experience timeout errors, consider:
+
+1. Using simpler/shorter usernames
+2. Upgrading to Vercel Pro plan for better performance
+3. Trying again during off-peak hours
+
 ### Security Features
 
 - **Rate Limiting**: 20 requests per 10-minute window per IP

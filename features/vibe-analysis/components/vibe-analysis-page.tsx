@@ -112,7 +112,10 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
       errorMessage = error.message;
 
       // Provide user-friendly hints based on error type
-      if (error.status === 0 || error.message.includes('Network error')) {
+      if (error.status === 408 || error.message.includes('timed out')) {
+        errorHint =
+          'The analysis took too long to complete. Try using shorter usernames or try again later when the service is less busy.';
+      } else if (error.status === 0 || error.message.includes('Network error')) {
         errorHint =
           'This might be a connection issue. Please check your internet connection and try again.';
       } else if (error.status === 429) {

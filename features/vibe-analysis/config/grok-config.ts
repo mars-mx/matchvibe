@@ -34,12 +34,12 @@ export const GROK_CONFIG = {
     maxRetries: 2,
   },
 
-  // Timeouts - increased for search operations with reasoning
+  // Timeouts - optimized for Vercel Hobby plan (60 second function limit)
   timeouts: {
-    request: 120000, // 120 seconds default (increased for reasoning models)
-    searchEnabled: 180000, // 180 seconds when search is enabled (Grok search with 100 results can be slow)
-    search: 30000, // 30 seconds for search operations alone
-    connection: 10000, // 10 seconds for connection establishment
+    request: 45000, // 45 seconds to leave buffer for response
+    searchEnabled: 50000, // 50 seconds when search is enabled
+    search: 20000, // 20 seconds for search operations alone
+    connection: 5000, // 5 seconds for connection establishment
   },
 };
 
