@@ -24,57 +24,9 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     refetch,
   } = useQuery({
     queryKey: ['vibe-analysis', user1, user2],
-    queryFn: async () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[VibeAnalysis] Starting analysis', {
-          user1,
-          user2,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      try {
-        const response = await fetchVibeAnalysis(user1, user2, 'standard');
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('[VibeAnalysis] Analysis successful', {
-            user1,
-            user2,
-            score: response.score,
-            timestamp: new Date().toISOString(),
-          });
-        }
-        return response;
-      } catch (err) {
-        const errorDetails = {
-          user1,
-          user2,
-          timestamp: new Date().toISOString(),
-          errorType: err instanceof VibeAPIError ? 'VibeAPIError' : 'UnknownError',
-          message: err instanceof Error ? err.message : 'Unknown error',
-          stack: err instanceof Error ? err.stack : undefined,
-        };
-
-        console.error('[VibeAnalysis] Analysis failed', errorDetails);
-
-        if (err instanceof VibeAPIError) {
-          console.error('[VibeAnalysis] API Error details:', {
-            status: err.status,
-            message: err.message,
-            details: err.details,
-          });
-        }
-
-        throw err;
-      }
-    },
+    queryFn: () => fetchVibeAnalysis(user1, user2, 'standard'),
     retry: 1,
-    retryDelay: (attemptIndex) => {
-      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(`[VibeAnalysis] Retrying after ${delay}ms (attempt ${attemptIndex + 1})`);
-      }
-      return delay;
-    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Loading state
