@@ -14,6 +14,15 @@ interface VibeAnalysisPageProps {
 }
 
 export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
+  console.log('[VibeAnalysisPage] Component rendered/re-rendered', {
+    user1,
+    user2,
+    timestamp: new Date().toISOString(),
+    propsValid: !!(user1 && user2),
+    user1Length: user1?.length || 0,
+    user2Length: user2?.length || 0,
+  });
+
   const router = useRouter();
 
   // Use React Query to fetch the analysis
@@ -24,13 +33,46 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     refetch,
   } = useQuery({
     queryKey: ['vibe-analysis', user1, user2],
-    queryFn: () => fetchVibeAnalysis(user1, user2, 'standard'),
+    queryFn: () => {
+      console.log('[VibeAnalysisPage] React Query executing fetchVibeAnalysis', {
+        user1,
+        user2,
+        analysisDepth: 'standard',
+        queryKey: ['vibe-analysis', user1, user2],
+      });
+      return fetchVibeAnalysis(user1, user2, 'standard');
+    },
     retry: 1,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => {
+      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
+      console.log('[VibeAnalysisPage] React Query retry delay calculated', {
+        attemptIndex,
+        calculatedDelay: delay,
+        maxDelay: 30000,
+      });
+      return delay;
+    },
+  });
+
+  console.log('[VibeAnalysisPage] React Query state', {
+    isLoading,
+    hasError: !!error,
+    hasResult: !!result,
+    errorType: error?.constructor?.name,
+    errorMessage: error instanceof Error ? error.message : undefined,
+    resultKeys: result ? Object.keys(result) : undefined,
+    queryKey: ['vibe-analysis', user1, user2],
   });
 
   // Loading state
   if (isLoading) {
+    console.log('[VibeAnalysisPage] Rendering loading state', {
+      user1,
+      user2,
+      isLoading: true,
+      renderTime: new Date().toISOString(),
+    });
+
     return (
       <section className="relative flex h-screen flex-col overflow-hidden md:overflow-hidden">
         <div className="gradient-bg absolute inset-0" />
@@ -56,6 +98,20 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
 
   // Error state
   if (error) {
+    console.error('[VibeAnalysisPage] Rendering error state', {
+      user1,
+      user2,
+      error: {
+        type: error.constructor.name,
+        message: error instanceof Error ? error.message : String(error),
+        status: error instanceof VibeAPIError ? error.status : undefined,
+        details: error instanceof VibeAPIError ? error.details : undefined,
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      isVibeAPIError: error instanceof VibeAPIError,
+      renderTime: new Date().toISOString(),
+    });
+
     let errorMessage =
       'Something went wrong while analyzing the vibe compatibility. Please try again.';
     let errorHint = '';
@@ -63,20 +119,51 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     if (error instanceof VibeAPIError) {
       errorMessage = error.message;
 
+      console.log('[VibeAnalysisPage] Processing VibeAPIError', {
+        status: error.status,
+        message: error.message,
+        details: error.details,
+      });
+
       // Provide user-friendly hints based on error type
       if (error.status === 408 || error.message.includes('timed out')) {
         errorHint =
           'The analysis took too long to complete. Try using shorter usernames or try again later when the service is less busy.';
+        console.log('[VibeAnalysisPage] Timeout error detected', {
+          status: error.status,
+          hint: errorHint,
+        });
       } else if (error.status === 0 || error.message.includes('Network error')) {
         errorHint =
           'This might be a connection issue. Please check your internet connection and try again.';
+        console.log('[VibeAnalysisPage] Network error detected', {
+          status: error.status,
+          hint: errorHint,
+        });
       } else if (error.status === 429) {
         errorHint = 'Too many requests. Please wait a moment before trying again.';
+        console.log('[VibeAnalysisPage] Rate limit error detected', {
+          status: error.status,
+          hint: errorHint,
+        });
       } else if (error.status >= 500) {
         errorHint = 'Our servers are experiencing issues. Please try again later.';
+        console.log('[VibeAnalysisPage] Server error detected', {
+          status: error.status,
+          hint: errorHint,
+        });
       } else if (error.status === 404) {
         errorHint = 'One or both usernames might not exist on X/Twitter.';
+        console.log('[VibeAnalysisPage] Not found error detected', {
+          status: error.status,
+          hint: errorHint,
+        });
       }
+    } else {
+      console.log('[VibeAnalysisPage] Non-VibeAPIError detected', {
+        errorType: error.constructor.name,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
     }
 
     return (
@@ -103,7 +190,15 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button
-              onClick={() => refetch()}
+              onClick={() => {
+                console.log('[VibeAnalysisPage] Try Again button clicked', {
+                  user1,
+                  user2,
+                  timestamp: new Date().toISOString(),
+                  action: 'refetch',
+                });
+                refetch();
+              }}
               className="from-primary/10 to-primary/5 hover:from-primary/15 hover:via-primary/5 hover:to-primary/10 group relative overflow-hidden border border-white/20 bg-gradient-to-r via-transparent text-white backdrop-blur-sm transition-all duration-500 ease-out hover:border-white/30"
             >
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -111,7 +206,15 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
             </Button>
 
             <Button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                console.log('[VibeAnalysisPage] Go Home button clicked', {
+                  user1,
+                  user2,
+                  timestamp: new Date().toISOString(),
+                  action: 'navigate_home',
+                });
+                router.push('/');
+              }}
               variant="outline"
               className="border-white/20 bg-white/5 text-white hover:bg-white/10"
             >
@@ -131,9 +234,37 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
 
   // Success state - show results
   if (result) {
+    console.log('[VibeAnalysisPage] Rendering success state with results', {
+      user1,
+      user2,
+      resultKeys: Object.keys(result),
+      hasCompatibilityScore: 'compatibilityScore' in result,
+      resultType: typeof result,
+      renderTime: new Date().toISOString(),
+    });
+
     return <VibeResultsWrapper result={result} user1={user1} user2={user2} />;
   }
 
   // Shouldn't reach here, but just in case
+  console.warn('[VibeAnalysisPage] Reached unexpected fallback state', {
+    user1,
+    user2,
+    isLoading,
+    hasError: !!error,
+    hasResult: !!result,
+    timestamp: new Date().toISOString(),
+    queryState: {
+      isLoading,
+      error: error
+        ? {
+            type: (error as any).constructor?.name,
+            message: (error as any) instanceof Error ? (error as Error).message : String(error),
+          }
+        : null,
+      result: result ? 'present' : 'null',
+    },
+  });
+
   return null;
 }
