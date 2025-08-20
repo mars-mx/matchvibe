@@ -68,7 +68,22 @@ export async function fetchVibeAnalysis(
       throw error;
     }
 
-    // Network or other errors
-    throw new VibeAPIError(error instanceof Error ? error.message : 'Network error occurred', 0);
+    // Network or other errors - provide more context
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorDetails = {
+      originalError: error,
+      url: '/api/vibe/analyze',
+      method: 'POST',
+      users: { user1: cleanUser1, user2: cleanUser2 },
+      analysisDepth,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Log detailed error in development
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.error('[VibeAPIClient] Network error:', errorDetails);
+    }
+
+    throw new VibeAPIError(`Network error: ${errorMessage}`, 0, errorDetails);
   }
 }

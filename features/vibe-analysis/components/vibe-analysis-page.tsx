@@ -104,10 +104,25 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
 
   // Error state
   if (error) {
-    const errorMessage =
-      error instanceof VibeAPIError
-        ? error.message
-        : 'Something went wrong while analyzing the vibe compatibility. Please try again.';
+    let errorMessage =
+      'Something went wrong while analyzing the vibe compatibility. Please try again.';
+    let errorHint = '';
+
+    if (error instanceof VibeAPIError) {
+      errorMessage = error.message;
+
+      // Provide user-friendly hints based on error type
+      if (error.status === 0 || error.message.includes('Network error')) {
+        errorHint =
+          'This might be a connection issue. Please check your internet connection and try again.';
+      } else if (error.status === 429) {
+        errorHint = 'Too many requests. Please wait a moment before trying again.';
+      } else if (error.status >= 500) {
+        errorHint = 'Our servers are experiencing issues. Please try again later.';
+      } else if (error.status === 404) {
+        errorHint = 'One or both usernames might not exist on X/Twitter.';
+      }
+    }
 
     return (
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-12">
@@ -127,6 +142,7 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
           {/* Error Message */}
           <div className="mb-8 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <p className="text-sm text-white/70">{errorMessage}</p>
+            {errorHint && <p className="mt-2 text-xs text-white/50">{errorHint}</p>}
           </div>
 
           {/* Action Buttons */}
