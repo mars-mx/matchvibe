@@ -5,7 +5,7 @@ import { ValidationError } from '@/shared/lib/errors/specific.errors';
 import { z } from 'zod';
 
 // Remove explicit runtime setting - let Vercel auto-detect
-export const maxDuration = 60; // 60 seconds - works on Vercel Hobby plan
+export const maxDuration = 300; // 300 seconds (5 minutes) - Vercel Pro plan with Fluid Compute
 
 export async function POST(request: NextRequest) {
   try {
