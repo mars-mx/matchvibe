@@ -399,3 +399,107 @@ Firecrawl is more powerful and can access most websites that WebFetch cannot, in
 - Paywalled or restricted content
 - JavaScript-heavy sites
 - Sites with anti-bot protection
+
+## AI Agent Commands
+
+The project includes specialized AI agents configured in `.claude/commands/agents/` that can be used via the `/agent` command in Claude Code. These agents provide expert guidance for specific development tasks:
+
+### Available Agents
+
+#### System Architecture
+
+- **system-architect** - Architectural decisions, code placement, patterns, and clean architecture enforcement
+  - Use for: New feature planning, refactoring decisions, code reviews, dependency evaluation
+  - Model: Sonnet
+
+#### Frontend Development
+
+- **react-nextjs-architect** - React components, Next.js patterns, state management, performance optimization
+  - Use for: Component design, React best practices, Zustand/React Query integration, SSR/SSG optimization
+  - Model: Sonnet
+
+- **ui-ux-design-specialist** - Interface design, user experience, accessibility, responsive layouts
+  - Use for: UI improvements, component styling, accessibility audits, mobile optimization
+  - Model: Sonnet
+
+#### Backend & Infrastructure
+
+- **convex-backend-architect** - Convex database design, real-time features, backend architecture
+  - Use for: Database schema design, real-time sync, Convex functions, data modeling
+  - Model: Sonnet
+
+- **vercel-deployment-specialist** - Deployment configuration, environment setup, CI/CD pipelines
+  - Use for: Vercel config, build optimization, environment variables, edge functions
+  - Model: Sonnet
+
+#### Authentication & Payments
+
+- **clerk-auth-specialist** - Clerk authentication, user management, permissions, security
+  - Use for: Auth implementation, role-based access, session management, OAuth setup
+  - Model: Sonnet
+
+- **polar-payments-specialist** - Polar.sh payment integration, subscriptions, billing
+  - Use for: Payment flow implementation, subscription tiers, webhook handling, billing logic
+  - Model: Sonnet
+
+#### Code Quality & Security
+
+- **pair-programming-reviewer** - Code review, best practices, refactoring suggestions
+  - Use for: Pull request reviews, code quality improvements, pattern suggestions
+  - Model: Sonnet
+
+- **security-auditor** - Security vulnerabilities, OWASP compliance, secure coding practices
+  - Use for: Security audits, vulnerability assessment, encryption, secure API design
+  - Model: Sonnet
+
+- **debug-analyst** - Bug investigation, error analysis, systematic troubleshooting
+  - Use for: Complex debugging, error pattern analysis, performance issues, root cause analysis
+  - Model: Sonnet
+
+#### Content & Marketing
+
+- **conversion-copywriter** - Landing page copy, marketing content, CTA optimization
+  - Use for: Homepage content, feature descriptions, marketing copy, A/B test variations
+  - Model: Sonnet
+
+### Usage Examples
+
+```bash
+# Get architectural guidance for a new feature
+/agent system-architect "Design subscription management feature with Stripe"
+
+# Review React component implementation
+/agent react-nextjs-architect "Review the dashboard component for best practices"
+
+# Debug a complex issue
+/agent debug-analyst "API calls failing intermittently in production"
+
+# Security audit before deployment
+/agent security-auditor "Audit authentication flow for vulnerabilities"
+
+# Optimize landing page conversion
+/agent conversion-copywriter "Improve hero section copy for better conversion"
+```
+
+### Agent Capabilities
+
+Each agent:
+
+- Has deep expertise in their specific domain
+- Follows 2025 best practices and latest framework versions
+- Provides opinionated but well-reasoned guidance
+- Can search documentation and research current patterns
+- Offers concrete examples and implementation plans
+- Does not write code directly but provides detailed specifications
+
+### When to Use Agents
+
+Use specialized agents when you need:
+
+- **Expert guidance** on specific technologies or patterns
+- **Architecture reviews** before implementing complex features
+- **Code quality audits** with domain-specific expertise
+- **Debugging assistance** for complex issues
+- **Security assessments** with professional-level analysis
+- **UI/UX recommendations** based on current best practices
+- **Infrastructure optimization** for deployment and scaling
