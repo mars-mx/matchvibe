@@ -8,7 +8,7 @@ export const GROK_CONFIG = {
   baseUrl: 'https://api.x.ai/v1',
 
   // Model Selection
-  model: process.env.GROK_MODEL_VERSION || 'grok-4-0709', // Configurable model version with fallback
+  model: process.env.GROK_MODEL_VERSION || 'grok-3-mini', // Using grok-3-mini as default for cost efficiency
 
   // Search Parameters
   search: {
