@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchVibeAnalysis, VibeAPIError } from '@/features/vibe-analysis/lib/vibe-api-client';
 import { VibeResultsWrapper } from '@/features/vibe-analysis/components/vibe-results-wrapper';
-import { VibeSkeleton } from '@/features/vibe-analysis/components/vibe-skeleton';
+import { CircularProgressFullscreen } from '@/components/ui/circular-progress-fullscreen';
+import { useSimulatedProgress } from '@/features/vibe-analysis/hooks/use-simulated-progress';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,6 +17,13 @@ interface VibeAnalysisPageProps {
 
 export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
   const router = useRouter();
+
+  // Initialize simulated progress
+  const { progress, start, complete, reset, isComplete } = useSimulatedProgress({
+    expectedDuration: 45000, // 45 seconds expected
+    updateInterval: 100, // Smooth updates
+    minDuration: 3000, // Show for at least 3 seconds
+  });
 
   // Use React Query to fetch the analysis
   const {
@@ -30,29 +39,36 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <section className="relative flex h-screen flex-col overflow-hidden md:overflow-hidden">
-        <div className="gradient-bg absolute inset-0" />
+  // Start progress when loading starts
+  useEffect(() => {
+    if (isLoading) {
+      start();
+    }
+  }, [isLoading, start]);
 
-        <div className="relative z-10 flex h-full flex-col overflow-y-auto px-4 py-4 sm:px-6 md:overflow-y-auto md:py-6">
-          {/* Header - Compact */}
-          <div className="mb-4 flex-shrink-0 text-center md:mb-6">
-            <div className="mb-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/70 backdrop-blur-sm md:mb-3 md:px-4 md:py-2 md:text-sm">
-              <span className="bg-primary mr-2 h-1.5 w-1.5 animate-pulse rounded-full md:h-2 md:w-2"></span>
-              Analyzing Vibe Compatibility...
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
-              <span className="gradient-text">Computing Vibe Match</span>
-            </h1>
-          </div>
+  // Complete progress when data arrives
+  useEffect(() => {
+    if (result || error) {
+      complete();
+    }
+  }, [result, error, complete]);
 
-          {/* Skeleton Components */}
-          <VibeSkeleton />
-        </div>
-      </section>
-    );
+  // Reset progress when refetching
+  useEffect(() => {
+    const handleRefetch = () => {
+      reset();
+      start();
+    };
+
+    if (isLoading) {
+      handleRefetch();
+    }
+  }, [isLoading, reset, start]);
+
+  // Loading state with new circular progress
+  // Show loading until both the data is ready AND the progress animation completes
+  if (isLoading || !isComplete) {
+    return <CircularProgressFullscreen progress={progress} />;
   }
 
   // Error state

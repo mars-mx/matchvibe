@@ -21,11 +21,11 @@ export function AnalysisResults({ result, className, loading = false }: Analysis
       </div>
 
       <div className="animate-in fade-in-0 slide-in-from-bottom-4 delay-150 duration-700">
-        <AnalysisCard result={result} loading={loading} />
+        <AnalysisCard result={result} />
       </div>
 
       <div className="animate-in fade-in-0 slide-in-from-bottom-4 delay-300 duration-700">
-        <CompatibilityBreakdown result={result} loading={loading} />
+        <CompatibilityBreakdown result={result} />
       </div>
 
       <div className="animate-in fade-in-0 slide-in-from-bottom-4 delay-500 duration-700">

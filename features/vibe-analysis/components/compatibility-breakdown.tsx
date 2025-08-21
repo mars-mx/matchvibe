@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import { cn } from '@/lib/utils';
 import { ThumbsUp, AlertCircle, Sparkles, TrendingUp, TrendingDown } from 'lucide-react';
@@ -10,18 +9,9 @@ import { ThumbsUp, AlertCircle, Sparkles, TrendingUp, TrendingDown } from 'lucid
 interface CompatibilityBreakdownProps {
   result: VibeAnalysisResult;
   className?: string;
-  loading?: boolean;
 }
 
-export function CompatibilityBreakdown({
-  result,
-  className,
-  loading = false,
-}: CompatibilityBreakdownProps) {
-  if (loading) {
-    return <CompatibilityBreakdownSkeleton className={className} />;
-  }
-
+export function CompatibilityBreakdown({ result, className }: CompatibilityBreakdownProps) {
   const { strengths, challenges, sharedInterests } = result;
 
   const hasContent =
@@ -96,27 +86,6 @@ export function CompatibilityBreakdown({
           </CardContent>
         </Card>
       )}
-    </div>
-  );
-}
-
-function CompatibilityBreakdownSkeleton({ className }: { className?: string }) {
-  return (
-    <div className={cn('grid gap-4 md:grid-cols-3', className)}>
-      {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <CardHeader className="pb-3">
-            <Skeleton className="h-5 w-24" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-[90%]" />
-              <Skeleton className="h-4 w-[80%]" />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 }

@@ -869,6 +869,33 @@
     pointer-events: none;
   }
 
+  /* Loading dots animation */
+  @keyframes fadeInOut {
+    0%,
+    100% {
+      opacity: 0.2;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .loading-dot {
+    animation: fadeInOut 1.4s ease-in-out infinite;
+  }
+
+  .loading-dot-1 {
+    animation-delay: 0s;
+  }
+
+  .loading-dot-2 {
+    animation-delay: 0.3s;
+  }
+
+  .loading-dot-3 {
+    animation-delay: 0.6s;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .gradient-bg {
       animation: none;
@@ -885,6 +912,10 @@
     .liquid-glass-inner,
     .liquid-glass-inner-glow {
       animation: none;
+    }
+    .loading-dot {
+      animation: none;
+      opacity: 0.6;
     }
   }
 }
