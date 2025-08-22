@@ -7,7 +7,7 @@ import { GROK_CONFIG } from '../../config/grok-config';
 import { grokAPIResponseSchema } from '../../schemas';
 import type { GrokAPIResponse } from '../../types';
 import { createChildLogger } from '@/lib/logger';
-import { NetworkError, RateLimitError, NotFoundError, ExternalAPIError } from '@/shared/lib/errors';
+import { NetworkError, RateLimitError, NotFoundError, ExternalAPIError, CreditExhaustionError } from '@/shared/lib/errors';
 import { GrokRetryManager } from './grok-retry-manager';
 
 const logger = createChildLogger('GrokAPIClient');
@@ -268,6 +268,15 @@ export class GrokAPIClient {
       throw new NotFoundError('X user', context.username || 'unknown');
     }
 
+    // Check for credit exhaustion patterns
+    if (this.isCreditExhaustionError(response.status, errorText)) {
+      throw new CreditExhaustionError('Grok AI', undefined, {
+        httpStatus: response.status,
+        errorBody: errorText,
+        operation: context.operation,
+      });
+    }
+
     // Create error response for other status codes
     const errorResponse = new Response(errorText, {
       status: response.status,
@@ -403,5 +412,32 @@ export class GrokAPIClient {
     if (message.includes('ENOTFOUND')) return 'dns_failure';
     if (message.includes('ETIMEDOUT')) return 'connection_timeout';
     return 'network_error';
+  }
+
+  /**
+   * Check if an error indicates credit or quota exhaustion
+   */
+  private isCreditExhaustionError(status: number, errorText: string): boolean {
+    // Check for payment required status
+    if (status === 402) return true;
+    
+    // Check for common credit exhaustion indicators in error text
+    const lowerErrorText = errorText.toLowerCase();
+    const exhaustionIndicators = [
+      'quota',
+      'credit',
+      'insufficient funds',
+      'insufficient credits',
+      'exceeded limit',
+      'billing',
+      'payment required',
+      'account suspended',
+      'usage limit',
+      'token limit',
+      'out of credits',
+      'out of tokens'
+    ];
+    
+    return exhaustionIndicators.some(indicator => lowerErrorText.includes(indicator));
   }
 }

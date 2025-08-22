@@ -56,6 +56,7 @@ export const ERROR_MESSAGES = {
   RATE_LIMIT: 'API rate limit exceeded, please try again later',
   INVALID_USERNAME: 'Invalid X username format',
   NETWORK_ERROR: 'Network error connecting to Grok API',
+  CREDIT_EXHAUSTED: 'Please let marsc_hb or richkuo7 know that the app is out of credits and we will top up',
 } as const;
 
 // Grok API Pricing (per million tokens)
