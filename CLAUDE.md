@@ -56,7 +56,7 @@ npx shadcn@latest add
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
 - **Icons**: Lucide React
 - **Fonts**: Geist Sans & Geist Mono
-- **Security**: Rate limiting (Upstash Redis), Bot protection (BotId)
+- **Security**: Bot protection (BotId), WAF-level rate limiting (Vercel)
 - **AI Integration**: Two-tier Grok API architecture (profile fetching + analysis)
 - **Error Handling**: Circuit breaker pattern, retry logic with exponential backoff
 - **Performance**: Usage tracking, request caching
@@ -67,7 +67,7 @@ npx shadcn@latest add
   - `/app/vibe/[user1]/[user2]` - Dynamic vibe analysis pages
 - `/public` - Static assets
 - `/lib` - Utility functions and shadcn utils
-  - `/lib/security` - Security middleware (rate limiting, bot protection)
+  - `/lib/security` - Security utilities (bot protection)
   - `/lib/validations` - Zod schemas for validation
   - `/lib/config` - Application constants and theme configuration
   - `/lib/parsers` - Text parsing utilities
@@ -84,7 +84,6 @@ npx shadcn@latest add
   - `/config` - Feature constants and prompts
   - `/lib` - Feature utilities (API client, usage tracker)
 - `/shared` - Shared utilities and error handling
-- `/middleware.ts` - Edge middleware for rate limiting on /vibe/\* routes
 - `/widgets` - Standalone widget components
 
 ### Key Configurations
@@ -104,7 +103,7 @@ npx shadcn@latest add
 - Server Components by default, use `"use client"` directive for client components
 - Metadata API for SEO
 - **Server Component First Architecture**: Direct service calls in Server Components instead of API routes
-- Server Actions for form submissions with built-in rate limiting
+- Server Actions for form submissions
 
 ### Styling Approach
 
@@ -182,24 +181,18 @@ const env = validateEnv(); // Fails fast with clear errors
 
 MatchVibe uses a **Server Component First** architecture with security applied at multiple layers:
 
-1. **Edge Middleware** (`/middleware.ts`): Rate limiting for `/vibe/*` routes
+1. **WAF Level**: Rate limiting handled by Vercel's Web Application Firewall
 2. **Server Components**: Bot protection via BotId
-3. **Server Actions**: Rate limiting wrapper for form submissions
+3. **Server Actions**: Direct form submissions without rate limiting wrapper
 
 #### Rate Limiting
 
-Implemented using Upstash Redis with sliding window algorithm:
+Rate limiting is now handled at the WAF (Web Application Firewall) level by Vercel, providing:
 
-- **Default Limits**: 20 requests per 10-minute window
-- **Algorithm**: Sliding window for consistent rate limiting
-- **Identification**: IP-based using proxy headers
-- **Local Development**: Disabled by default (no Redis needed)
-- **Production**: Auto-configured via Vercel Marketplace
-
-**Implementation Locations:**
-
-- **Edge Middleware**: Protects `/vibe/*` routes
-- **Server Actions**: Wrapped with `withServerActionRateLimit`
+- **DDoS Protection**: Automatic protection against distributed attacks
+- **Global Rate Limiting**: Enforced at the edge before requests reach your application
+- **No Configuration Required**: Managed automatically by Vercel's infrastructure
+- **Better Performance**: Requests are blocked before hitting your application code
 
 #### Bot Protection
 
@@ -211,8 +204,8 @@ Implemented using Upstash Redis with sliding window algorithm:
 #### Security Layers
 
 ```typescript
-// 1. Edge Middleware (rate limiting)
-// Applied automatically to /vibe/* routes via middleware.ts
+// 1. WAF Level (rate limiting)
+// Handled automatically by Vercel's infrastructure
 
 // 2. Server Component (bot protection)
 const botResult = await verifyBotId();
@@ -220,10 +213,11 @@ if (shouldBlockRequest(botResult)) {
   notFound();
 }
 
-// 3. Server Action (rate limiting)
-export const action = withServerActionRateLimit(actionImpl, {
-  errorMessage: 'Too many requests...',
-});
+// 3. Server Action (direct implementation)
+export const action = async (formData: FormData) => {
+  // Direct implementation without rate limiting wrapper
+  return actionImpl(formData);
+};
 ```
 
 ### Code Quality & Pre-commit Workflow
@@ -309,7 +303,7 @@ features/vibe-analysis/services/
 From README roadmap:
 
 1. ~~UI component library (Shadcn) integration~~ ✅ Complete
-2. ~~Rate limiting and bot protection~~ ✅ Complete
+2. ~~Bot protection~~ ✅ Complete (Rate limiting via WAF)
 3. ~~Vibe analysis algorithm implementation~~ ✅ Complete
 4. ~~Results UI with score visualization~~ ✅ Complete
 5. ~~Glass morphism UI design~~ ✅ Complete
@@ -323,19 +317,6 @@ From README roadmap:
 
 - `GROK_API_KEY` - Grok API key for AI analysis (starts with `xai-`)
 
-### Optional (Local Development)
-
-- `RATE_LIMIT_ENABLED` - Enable rate limiting (default: false in dev, true in prod)
-- `RATE_LIMIT_MAX_REQUESTS` - Max requests per window (default: 20)
-- `RATE_LIMIT_WINDOW_MINUTES` - Time window in minutes (default: 10)
-- `RATE_LIMIT_REFILL_RATE` - Tokens refilled per minute (default: 2)
-- `RATE_LIMIT_BURST_CAPACITY` - Extra burst capacity (default: 5)
-
-### Required (Production)
-
-- `UPSTASH_REDIS_REST_URL` - Redis URL (auto-configured via Vercel Marketplace)
-- `UPSTASH_REDIS_REST_TOKEN` - Redis token (auto-configured via Vercel Marketplace)
-
 ## Deployment
 
 Configured for Vercel deployment with one-click deploy button in README.
@@ -344,30 +325,15 @@ Configured for Vercel deployment with one-click deploy button in README.
 
 1. Deploy to Vercel
 2. Add `GROK_API_KEY` environment variable
-3. Connect Upstash Redis via Vercel Marketplace:
-   - Go to Storage tab → Connect Store → Upstash
-   - Create Redis database (free tier: 10k requests/day)
-   - Environment variables auto-configured
+3. Rate limiting is automatically handled by Vercel's WAF
 
 ## Testing Guidelines
 
 ### Local Development
 
-- Rate limiting disabled by default
-- No Redis setup required
-- Set `RATE_LIMIT_ENABLED=true` to test rate limiting locally
-
-### Testing Rate Limiting
-
-```bash
-# Test rate limit headers on vibe analysis pages
-curl -I http://localhost:3000/vibe/user1/user2
-
-# Check headers:
-# X-RateLimit-Limit: 20
-# X-RateLimit-Remaining: 19
-# X-RateLimit-Reset: 2025-01-16T10:30:00Z
-```
+- Rate limiting is handled at deployment (WAF level)
+- No local rate limiting configuration needed
+- Bot protection warnings appear in development but don't block requests
 
 ### Testing Grok Service
 

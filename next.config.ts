@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.x.ai https://*.convex.cloud https://*.upstash.io https://vercel.live wss://*.convex.cloud https://*.vercel.app",
+              "connect-src 'self' https://api.x.ai https://*.convex.cloud https://vercel.live wss://*.convex.cloud https://*.vercel.app",
               "media-src 'self'",
               "object-src 'none'",
               "child-src 'self'",

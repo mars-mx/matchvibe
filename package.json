@@ -15,8 +15,7 @@
     "convex:dev": "convex dev",
     "convex:codegen": "convex codegen",
     "convex:deploy": "convex deploy",
-    "test:grok": "tsx scripts/test-grok-service.ts",
-    "test:rate-limit": "tsx scripts/test-rate-limiting.ts"
+    "test:grok": "tsx scripts/test-grok-service.ts"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",
@@ -26,8 +25,6 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-query": "^5.85.3",
     "@tanstack/react-query-devtools": "^5.85.3",
-    "@upstash/ratelimit": "^2.0.6",
-    "@upstash/redis": "^1.35.3",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
     "botid": "^1.5.2",

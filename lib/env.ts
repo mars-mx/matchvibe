@@ -76,15 +76,6 @@ function createBuildTimeEnv(): Env {
 
     // Optional settings with defaults
     NEXT_PUBLIC_API_KEY: undefined,
-    UPSTASH_REDIS_REST_URL: undefined,
-    UPSTASH_REDIS_REST_TOKEN: undefined,
-
-    // Rate limiting defaults
-    RATE_LIMIT_ENABLED: false,
-    RATE_LIMIT_MAX_REQUESTS: 20,
-    RATE_LIMIT_WINDOW_MINUTES: 10,
-    RATE_LIMIT_REFILL_RATE: 2,
-    RATE_LIMIT_BURST_CAPACITY: 5,
 
     // Grok rate limiting defaults
     GROK_RATE_LIMIT_GPT4_RPM: 480,
@@ -185,50 +176,6 @@ export function isTest(): boolean {
     return process.env.NODE_ENV === 'test';
   }
   return getEnv().NODE_ENV === 'test';
-}
-
-/**
- * Get Upstash Redis configuration
- * @returns Redis config or null if not configured
- */
-export function getRedisConfig(): { url: string; token: string } | null {
-  const environment = getEnv();
-  if (environment.UPSTASH_REDIS_REST_URL && environment.UPSTASH_REDIS_REST_TOKEN) {
-    return {
-      url: environment.UPSTASH_REDIS_REST_URL,
-      token: environment.UPSTASH_REDIS_REST_TOKEN,
-    };
-  }
-  return null;
-}
-
-/**
- * Get rate limiting configuration
- * @returns Rate limit configuration
- */
-export function getRateLimitConfig() {
-  const environment = getEnv();
-  return {
-    enabled: environment.RATE_LIMIT_ENABLED,
-    maxRequests: environment.RATE_LIMIT_MAX_REQUESTS,
-    windowMinutes: environment.RATE_LIMIT_WINDOW_MINUTES,
-    refillRate: environment.RATE_LIMIT_REFILL_RATE,
-    burstCapacity: environment.RATE_LIMIT_BURST_CAPACITY,
-  };
-}
-
-/**
- * Check if rate limiting is enabled
- * @returns True if rate limiting is enabled
- */
-export function isRateLimitEnabled(): boolean {
-  // Skip during build time
-  if (isBuildTime()) {
-    return false;
-  }
-
-  const environment = getEnv();
-  return environment.RATE_LIMIT_ENABLED && !!getRedisConfig();
 }
 
 /**

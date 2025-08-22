@@ -11,7 +11,7 @@ MatchVibe is an open-source tool to analyze compatibility between X users with a
 - Compare X user vibes using AI-driven analysis.
 - Open-source and community-driven.
 - Responsive UI with Shadcn components.
-- Rate limiting protection (20 requests per 10 minutes).
+- Rate limiting protection via Vercel's WAF.
 - Bot detection and protection.
 - Secure API with request validation.
 
@@ -22,7 +22,7 @@ MatchVibe is an open-source tool to analyze compatibility between X users with a
 - **Deployment**: Vercel
 - **Language**: TypeScript
 - **Code Quality**: ESLint, Prettier, Husky, Commitlint
-- **Security**: Rate limiting with Upstash Redis, Bot protection
+- **Security**: WAF-level rate limiting, Bot protection
 - **AI**: Grok API for vibe analysis
 
 ## Getting Started
@@ -90,15 +90,7 @@ Copy `.env.example` to `.env.local` and configure:
 # Required for API functionality
 GROK_API_KEY=xai-your-api-key-here
 
-# Optional for local development (rate limiting disabled by default)
-RATE_LIMIT_ENABLED=false  # Set to true to test rate limiting locally
-
-# Required for production (auto-configured via Vercel Marketplace)
-UPSTASH_REDIS_REST_URL=https://your-redis-instance.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-redis-token-here
 ```
-
-**Note**: Rate limiting is automatically disabled in local development. No Redis setup needed for local testing!
 
 ## Deployment
 
@@ -112,11 +104,7 @@ Deploy to Vercel with one click:
 1. **Deploy to Vercel** using the button above
 2. **Configure environment variables**:
    - Add `GROK_API_KEY` in Vercel dashboard
-3. **Setup Upstash Redis** (for rate limiting):
-   - Go to your Vercel project → Storage tab
-   - Click "Connect Store" → Select "Upstash"
-   - Create a Redis database (free tier: 10,000 requests/day)
-   - Environment variables are auto-configured!
+3. **Rate limiting** is automatically handled by Vercel's WAF
 
 ### ⚠️ Important: Vercel Plan Requirements
 
@@ -133,8 +121,8 @@ The app is configured to work within a 60-second timeout window. If you experien
 
 ### Security Features
 
-- **Rate Limiting**: 20 requests per 10-minute window per IP
-- **Token Bucket Algorithm**: Allows burst traffic with controlled average rate
+- **Rate Limiting**: Handled automatically by Vercel's WAF
+- **DDoS Protection**: Built-in protection at the edge
 - **Bot Protection**: Blocks malicious automated traffic
 - **Request Validation**: Strict input validation with Zod schemas
 
