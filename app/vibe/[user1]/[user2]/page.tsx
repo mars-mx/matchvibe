@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { VibeAnalysisPage } from '@/features/vibe-analysis/components/vibe-analysis-page';
+import { VibeErrorBoundary } from '@/features/vibe-analysis/components/vibe-error-boundary';
 
 interface PageProps {
   params: Promise<{
@@ -24,6 +25,10 @@ export default async function VibePage({ params }: PageProps) {
   const cleanUser1 = user1.replace('@', '').trim();
   const cleanUser2 = user2.replace('@', '').trim();
 
-  // Pass cleaned usernames to the client component
-  return <VibeAnalysisPage user1={cleanUser1} user2={cleanUser2} />;
+  // Pass cleaned usernames to the client component with error boundary
+  return (
+    <VibeErrorBoundary userOne={cleanUser1} userTwo={cleanUser2}>
+      <VibeAnalysisPage user1={cleanUser1} user2={cleanUser2} />
+    </VibeErrorBoundary>
+  );
 }

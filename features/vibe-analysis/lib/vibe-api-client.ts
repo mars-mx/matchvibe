@@ -46,7 +46,7 @@ export async function fetchVibeAnalysis(
 
   // Add timeout handling
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 295000); // 295 seconds client timeout (5 seconds before server timeout)
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 seconds client timeout (reasonable for most analyses)
 
   try {
     const response = await fetch(apiUrl, {

@@ -3,17 +3,20 @@ import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/requ
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import { getGrokApiKey } from '@/lib/env';
 import { ValidationError } from '@/shared/lib/errors';
+import { createChildLogger } from '@/lib/logger';
+
+const logger = createChildLogger('AnalyzeService');
 
 export async function analyzeVibeService(
   userOne: string,
   userTwo: string,
   analysisDepth: 'quick' | 'standard' | 'deep' = 'standard'
 ): Promise<VibeAnalysisResult> {
-  try {
-    // Remove @ symbol if present
-    const cleanUserOne = userOne.replace('@', '');
-    const cleanUserTwo = userTwo.replace('@', '');
+  // Remove @ symbol if present
+  const cleanUserOne = userOne.replace('@', '');
+  const cleanUserTwo = userTwo.replace('@', '');
 
+  try {
     // Validate usernames are different
     if (cleanUserOne.toLowerCase() === cleanUserTwo.toLowerCase()) {
       throw new ValidationError('Please enter two different usernames', {
@@ -44,7 +47,15 @@ export async function analyzeVibeService(
   } catch (error) {
     // For service layer, we want to throw the error
     // so the page can handle it appropriately
-    console.error('Vibe analysis service error:', error);
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        userOne: cleanUserOne,
+        userTwo: cleanUserTwo,
+        analysisDepth,
+      },
+      'Vibe analysis service error'
+    );
     throw error;
   }
 }

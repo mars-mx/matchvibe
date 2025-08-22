@@ -179,7 +179,6 @@ export function CircularProgressFullscreen({
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 filter={prefersReducedMotion ? undefined : 'url(#vibeGlow)'}
-                className={cn(prefersReducedMotion ? '' : 'transition-all duration-1000 ease-out')}
                 style={{
                   filter: prefersReducedMotion
                     ? undefined
