@@ -9,6 +9,7 @@ import { useSimulatedProgress } from '@/features/vibe-analysis/hooks/use-simulat
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface VibeAnalysisPageProps {
   user1: string;
@@ -65,6 +66,25 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     }
   }, [isLoading, reset, start]);
 
+  // Show toast for credit exhaustion errors
+  useEffect(() => {
+    if (error instanceof VibeAPIError) {
+      if (error.status === 402 || 
+          error.message.toLowerCase().includes('credit') ||
+          error.message.toLowerCase().includes('quota') ||
+          error.message.toLowerCase().includes('marsc_hb') ||
+          error.message.toLowerCase().includes('richkuo7')) {
+        toast.error('Please let marsc_hb or richkuo7 know that the app is out of credits and we will top up', {
+          duration: 10000, // 10 seconds for visibility
+          action: {
+            label: 'Dismiss',
+            onClick: () => {},
+          },
+        });
+      }
+    }
+  }, [error]);
+
   // Loading state with new circular progress
   // Show loading until both the data is ready AND the progress animation completes
   if (isLoading || !isComplete) {
@@ -81,7 +101,14 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
       errorMessage = error.message;
 
       // Provide user-friendly hints based on error type
-      if (error.status === 408 || error.message.includes('timed out')) {
+      if (error.status === 402 || 
+          error.message.toLowerCase().includes('credit') ||
+          error.message.toLowerCase().includes('quota') ||
+          error.message.toLowerCase().includes('marsc_hb') ||
+          error.message.toLowerCase().includes('richkuo7')) {
+        errorMessage = 'App Credits Exhausted';
+        errorHint = 'Please let marsc_hb or richkuo7 know that the app is out of credits and we will top up';
+      } else if (error.status === 408 || error.message.includes('timed out')) {
         errorHint =
           'The analysis took too long to complete. Try using shorter usernames or try again later when the service is less busy.';
       } else if (error.status === 0 || error.message.includes('Network error')) {

@@ -10,6 +10,7 @@ export type ErrorCode =
   | 'CONFIG_ERROR'
   | 'EXTERNAL_API_ERROR'
   | 'NETWORK_ERROR'
+  | 'CREDIT_EXHAUSTION'
   | 'INTERNAL_ERROR';
 
 export interface ErrorMetadata {

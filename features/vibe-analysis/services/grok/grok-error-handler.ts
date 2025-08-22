@@ -9,6 +9,7 @@ import {
   NetworkError,
   RateLimitError,
   NotFoundError,
+  CreditExhaustionError,
 } from '@/shared/lib/errors';
 import { ERROR_MESSAGES } from '../../config/grok-config';
 import { createChildLogger } from '@/lib/logger';
@@ -94,7 +95,8 @@ export class GrokErrorHandler {
       error instanceof RateLimitError ||
       error instanceof ExternalAPIError ||
       error instanceof NetworkError ||
-      error instanceof NotFoundError
+      error instanceof NotFoundError ||
+      error instanceof CreditExhaustionError
     ) {
       throw error;
     }
@@ -223,6 +225,14 @@ export class GrokErrorHandler {
         error: ERROR_MESSAGES.USER_NOT_FOUND,
         code: 'NOT_FOUND',
         details: error.message,
+      };
+    }
+
+    if (error instanceof CreditExhaustionError) {
+      return {
+        error: ERROR_MESSAGES.CREDIT_EXHAUSTED,
+        code: 'CREDIT_EXHAUSTED',
+        details: error.service,
       };
     }
 
