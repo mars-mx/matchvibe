@@ -40,6 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Convex
+convex/_generated/
+
 # Claude Code
 CLAUDE.local.md
 .claude/config.json
