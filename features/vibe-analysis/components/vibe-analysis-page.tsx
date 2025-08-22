@@ -70,9 +70,14 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     }
   }, [isLoading, reset, start]);
 
-  // Show toast for credit exhaustion errors
+  // Show toast for credit exhaustion errors (but not for user not found)
   useEffect(() => {
     if (error instanceof VibeAPIError) {
+      // Skip toast for user not found errors since we handle them with specific UI
+      if (error.status === 404 && error.details && typeof error.details === 'object' && 'username' in error.details) {
+        return;
+      }
+
       if (
         error.status === 402 ||
         error.message.toLowerCase().includes('credit') ||
@@ -105,12 +110,19 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
     let errorMessage =
       'Something went wrong while analyzing the vibe compatibility. Please try again.';
     let errorHint = '';
+    let isUserNotFound = false;
+    let notFoundUsername = '';
 
     if (error instanceof VibeAPIError) {
       errorMessage = error.message;
 
-      // Provide user-friendly hints based on error type
-      if (
+      // Check if this is a USER_NOT_FOUND error with specific username
+      if (error.status === 404 && error.details && typeof error.details === 'object' && 'username' in error.details) {
+        isUserNotFound = true;
+        notFoundUsername = error.details.username as string;
+        errorMessage = `X user '@${notFoundUsername}' not found`;
+        errorHint = 'Please check the username spelling and try again. The user might not exist on X/Twitter or their account might be private.';
+      } else if (
         error.status === 402 ||
         error.message.toLowerCase().includes('credit') ||
         error.message.toLowerCase().includes('quota') ||
@@ -154,6 +166,18 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
           <div className="mb-8 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
             <p className="text-sm text-white/70">{errorMessage}</p>
             {errorHint && <p className="mt-2 text-xs text-white/50">{errorHint}</p>}
+            {isUserNotFound && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-white/60">
+                <span>Analyzing:</span>
+                <span className={`rounded px-2 py-1 ${notFoundUsername === user1 ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-white/80'}`}>
+                  @{user1}
+                </span>
+                <span className="text-white/40">×</span>
+                <span className={`rounded px-2 py-1 ${notFoundUsername === user2 ? 'bg-red-500/20 text-red-300' : 'bg-white/10 text-white/80'}`}>
+                  @{user2}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

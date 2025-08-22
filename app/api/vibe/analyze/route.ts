@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeVibeService } from '@/features/vibe-analysis/services/analyze.service';
 import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/request.schema';
-import { ValidationError } from '@/shared/lib/errors/specific.errors';
+import { ValidationError, NotFoundError } from '@/shared/lib/errors/specific.errors';
 import { withBotProtection } from '@/lib/security/middleware/bot-protection';
 import { createChildLogger } from '@/lib/logger';
 import { z } from 'zod';
@@ -46,6 +46,27 @@ export const POST = withBotProtection(async (request: NextRequest): Promise<Next
           details: error.metadata,
         },
         { status: 400 }
+      );
+    }
+
+    // Handle user not found errors
+    if (error instanceof NotFoundError) {
+      logger.info(
+        {
+          error: error.message,
+          username: error.metadata?.identifier,
+          operation: 'vibe-analysis',
+        },
+        'User not found during vibe analysis'
+      );
+
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: 'USER_NOT_FOUND',
+          details: { username: error.metadata?.identifier },
+        },
+        { status: 404 }
       );
     }
 
