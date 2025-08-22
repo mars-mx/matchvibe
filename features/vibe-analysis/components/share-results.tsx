@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import type { VibeAnalysisResult } from '@/features/vibe-analysis/types';
 import { generateShareText, generateShareUrl } from '@/features/vibe-analysis/lib/api-client';
 import { cn } from '@/lib/utils';
-import { Share2, Twitter, Link, Check, Copy } from 'lucide-react';
+import { Twitter, Link, Check, Copy } from 'lucide-react';
 
 interface ShareResultsProps {
   result: VibeAnalysisResult;
@@ -33,25 +33,6 @@ export function ShareResults({ result, className, variant = 'default' }: ShareRe
   const handleShareTwitter = () => {
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, '_blank', 'width=550,height=420');
-  };
-
-  const handleNativeShare = async () => {
-    if (!navigator.share) {
-      handleCopyLink();
-      return;
-    }
-
-    try {
-      await navigator.share({
-        title: 'Vibe Check Results',
-        text: shareText,
-        url: shareUrl,
-      });
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        toast.error('Failed to share');
-      }
-    }
   };
 
   if (variant === 'compact') {
@@ -82,14 +63,6 @@ export function ShareResults({ result, className, variant = 'default' }: ShareRe
             </>
           )}
         </Button>
-        <Button
-          size="sm"
-          onClick={handleNativeShare}
-          className="gap-2 border border-white/20 bg-white/10 text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/20"
-        >
-          <Share2 className="h-3 w-3" />
-          Share
-        </Button>
       </div>
     );
   }
@@ -114,11 +87,6 @@ export function ShareResults({ result, className, variant = 'default' }: ShareRe
               Copy Link
             </>
           )}
-        </Button>
-
-        <Button variant="outline" onClick={handleNativeShare} className="flex-1 gap-2">
-          <Share2 className="h-4 w-4" />
-          Share
         </Button>
       </div>
 

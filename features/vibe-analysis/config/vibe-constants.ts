@@ -59,8 +59,7 @@ export const USERNAME_LIMITS = {
  */
 export const SHARE_CONFIG = {
   BASE_URL: 'https://matchvibe.app',
-  SHARE_TEXT_TEMPLATE:
-    'Vibe Check: @{user1} × @{user2} = {score}/100 ({level}) 🎯\n\nCheck your vibe compatibility at matchvibe.app',
+  SHARE_TEXT_TEMPLATE: 'Vibe Check: @{user1} × @{user2} = {score}/100 ({level}) 🎯',
 } as const;
 
 export type AnalysisDepth = (typeof ANALYSIS_DEPTHS)[keyof typeof ANALYSIS_DEPTHS];

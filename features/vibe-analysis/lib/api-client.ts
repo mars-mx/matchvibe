@@ -49,18 +49,12 @@ export function generateShareText(result: VibeAnalysisResult): string {
 }
 
 export function generateShareUrl(result: VibeAnalysisResult): string {
-  const params = new URLSearchParams({
-    u1: result.metadata.userOne,
-    u2: result.metadata.userTwo,
-    score: result.score.toString(),
-  });
-
   const baseUrl =
     typeof window !== 'undefined'
       ? window.location.origin
       : process.env.NEXT_PUBLIC_APP_URL || 'https://matchvibe.app';
 
-  return `${baseUrl}/share?${params.toString()}`;
+  return `${baseUrl}/vibe/${result.metadata.userOne}/${result.metadata.userTwo}`;
 }
 
 export function calculateAnalysisDuration(timestamp: string): string {
