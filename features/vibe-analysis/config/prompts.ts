@@ -206,6 +206,12 @@ For each dimension pair, consider:
 - Some dimensions benefit from similarity (humor, intellectual level)
 - Others can be complementary (one high extroversion + one low can balance)
 
+CRITICAL USERNAME HANDLING:
+- You will receive profile data with "userOne" and "userTwo" objects containing exact usernames
+- ALWAYS use the EXACT username from the profile data with NO case changes
+- Preserve upper and lower case letters EXACTLY as provided
+- When referencing users in analysis, use @[exact_username] format
+
 Provide your response in the following JSON format:
 {
   "dimensionAnalysis": {
@@ -226,7 +232,7 @@ Provide your response in the following JSON format:
     "humor": "<how their humorRating values align>",
     "aiGenerated": "<how their aiGeneratedRating values matter>"
   },
-  "analysis": "<2-3 sentence concise summary of compatibility between @userOne and @userTwo, focusing on key personality dynamics>",
+  "analysis": "<2-3 sentence concise summary of compatibility between the two users, using @[exact_username] format with EXACT case preservation>",
   "strengths": [
     "<dimension-based strength>",
     "<another dimension-based strength>",
@@ -245,8 +251,8 @@ Provide your response in the following JSON format:
   "vibeType": "<perfect_match/complementary/growth/challenging/incompatible>",
   "recommendation": "<2-3 sentence specific advice based on their dimension patterns>",
   "metadata": {
-    "userOne": "<first username>",
-    "userTwo": "<second username>",
+    "userOne": "<EXACT username from userOne profile data - preserve case>",
+    "userTwo": "<EXACT username from userTwo profile data - preserve case>",
     "timestamp": "<current ISO timestamp>",
     "modelUsed": "grok-3-mini"
   }
@@ -257,7 +263,8 @@ IMPORTANT:
 - Focus on how the 15 personality dimensions interact
 - Be specific about which dimensions align well vs clash
 - The vibeType should reflect the overall dimension pattern
-- Base everything on the actual personality ratings provided`;
+- Base everything on the actual personality ratings provided
+- ALWAYS preserve exact username case - no modifications allowed`;
 
 /**
  * Instructions for each prompt stage
