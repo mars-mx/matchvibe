@@ -20,7 +20,7 @@ export function VibeAnalysisPage({ user1, user2 }: VibeAnalysisPageProps) {
 
   // Initialize simulated progress
   const { progress, start, complete, reset, isComplete } = useSimulatedProgress({
-    expectedDuration: 45000, // 45 seconds expected
+    expectedDuration: 15000, // 15 seconds expected (more realistic)
     updateInterval: 100, // Smooth updates
     minDuration: 3000, // Show for at least 3 seconds
   });

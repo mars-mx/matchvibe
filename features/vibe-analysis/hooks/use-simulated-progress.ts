@@ -19,7 +19,7 @@ interface UseSimulatedProgressReturn {
 }
 
 export function useSimulatedProgress({
-  expectedDuration = 45000, // 45 seconds default
+  expectedDuration = 15000, // 15 seconds default (more realistic)
   updateInterval = 100, // Update every 100ms for smooth animation
   minDuration = 3000, // Show for at least 3 seconds
   completionDelay = 500, // Wait 500ms at 100% before completing
@@ -35,19 +35,19 @@ export function useSimulatedProgress({
   const isRunningRef = useRef(false);
   const isMountedRef = useRef(true);
 
-  // Calculate progress using a logarithmic curve that slows down as it approaches 95%
+  // Calculate progress using a logarithmic curve that slows down as it approaches 85%
   const calculateProgress = useCallback(
     (elapsedTime: number): number => {
       const ratio = Math.min(elapsedTime / expectedDuration, 1);
 
-      // Use a logarithmic curve that approaches 95% asymptotically
-      // This ensures we never reach 100% until the actual request completes
-      const baseProgress = 95 * (1 - Math.exp(-3 * ratio));
+      // Use a logarithmic curve that reaches ~85% at expected duration
+      // Using -5 instead of -3 for faster initial progression
+      const baseProgress = 85 * (1 - Math.exp(-5 * ratio));
 
       // Add some variance to make it feel more natural
       const variance = Math.sin(elapsedTime / 1000) * 2;
 
-      return Math.min(95, Math.max(0, baseProgress + variance));
+      return Math.min(85, Math.max(0, baseProgress + variance));
     },
     [expectedDuration]
   );
@@ -89,8 +89,8 @@ export function useSimulatedProgress({
       const newProgress = calculateProgress(elapsedTime);
       setProgress(newProgress);
 
-      // Stop updating if we've reached 95%
-      if (newProgress >= 95) {
+      // Stop updating if we've reached 85%
+      if (newProgress >= 85) {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;

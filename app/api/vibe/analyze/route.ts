@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { analyzeVibeService } from '@/features/vibe-analysis/services/analyze.service';
 import { vibeAnalysisRequestSchema } from '@/features/vibe-analysis/schemas/request.schema';
 import { ValidationError } from '@/shared/lib/errors/specific.errors';
+import { withBotProtection } from '@/lib/security/middleware/bot-protection';
+import { createChildLogger } from '@/lib/logger';
 import { z } from 'zod';
+
+const logger = createChildLogger('VibeAnalyzeAPI');
 
 // Remove explicit runtime setting - let Vercel auto-detect
 export const maxDuration = 300; // 300 seconds (5 minutes) - Vercel Pro plan with Fluid Compute
 
-export async function POST(request: NextRequest) {
+// Protect the POST endpoint with bot detection
+export const POST = withBotProtection(async (request: NextRequest): Promise<NextResponse> => {
   try {
     // Parse request body
     const body = await request.json();
@@ -25,7 +30,13 @@ export async function POST(request: NextRequest) {
     // Return successful response
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Vibe analysis API error:', error);
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      'Vibe analysis API error'
+    );
 
     // Handle validation errors
     if (error instanceof ValidationError) {
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // Support preflight requests
 export async function OPTIONS(_request: NextRequest) {
