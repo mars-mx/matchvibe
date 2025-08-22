@@ -163,6 +163,26 @@ export class NetworkError extends AppError {
 }
 
 /**
+ * Credit or quota exhaustion errors for billing-related failures
+ */
+export class CreditExhaustionError extends AppError {
+  public readonly service: string;
+
+  constructor(service: string, message?: string, metadata?: ErrorMetadata) {
+    const defaultMessage = `${service} credits/tokens have been exhausted. Please contact marsc_hb or richkuo7 to top up.`;
+    
+    super(message || defaultMessage, 'CREDIT_EXHAUSTION', 402, true, {
+      ...metadata,
+      service,
+      requiresManualIntervention: true,
+      contacts: ['marsc_hb', 'richkuo7'],
+    });
+    
+    this.service = service;
+  }
+}
+
+/**
  * Internal server errors for unexpected failures
  */
 export class InternalError extends AppError {

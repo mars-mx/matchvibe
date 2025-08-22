@@ -14,6 +14,7 @@ export {
   ConfigError,
   ExternalAPIError,
   NetworkError,
+  CreditExhaustionError,
   InternalError,
 } from './specific.errors';
 
