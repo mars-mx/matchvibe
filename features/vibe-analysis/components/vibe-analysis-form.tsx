@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { GlassInput } from '@/components/ui/glass-input';
@@ -17,6 +17,21 @@ export function VibeAnalysisForm({ className }: VibeAnalysisFormProps) {
   const [userTwo, setUserTwo] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const STORAGE_KEY = 'matchvibe-username';
+
+  // Load saved username on component mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setUserOne(saved);
+      }
+    } catch (error) {
+      // Silently handle localStorage errors (e.g., in incognito mode)
+      console.warn('Failed to load saved username from localStorage:', error);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +84,20 @@ export function VibeAnalysisForm({ className }: VibeAnalysisFormProps) {
             placeholder="marsc_hb"
             prefix="@"
             value={userOne}
-            onChange={(e) => setUserOne(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setUserOne(value);
+              try {
+                if (value.trim()) {
+                  localStorage.setItem(STORAGE_KEY, value);
+                } else {
+                  localStorage.removeItem(STORAGE_KEY);
+                }
+              } catch (error) {
+                // Silently handle localStorage errors (e.g., in incognito mode)
+                console.warn('Failed to save username to localStorage:', error);
+              }
+            }}
             required
             aria-label="First username input"
             antiAutofill={true}
